@@ -1,0 +1,81 @@
+# jobpile config. Copy this file to your data folder as config.toml and
+# edit it there. Nothing in this file is secret; the remoet API key is
+# resolved at runtime from REMOET_API_KEY or key_command below, never
+# written here.
+
+# The yearly USD floor. A listing with a salary skips if the top of its
+# range falls under this; a listing with no salary always passes this
+# check.
+floor_usd = 80000
+
+# How many units of each currency equal one USD. Used to convert a
+# salary to yearly USD. Add a row for any currency you see often in
+# skip.md with "no currency rate configured". Update occasionally; these
+# are not pulled live.
+[currency_rates]
+USD = 1
+EUR = 0.92
+GBP = 0.79
+CAD = 1.38
+AUD = 1.52
+INR = 83.0
+PLN = 4.0
+
+[title]
+# A title must contain one of these...
+senior_patterns = [
+  "staff", "principal", "senior", "lead", "architect",
+  "engineering manager", "head of engineering", "founding engineer",
+]
+# ...and one of these...
+engineering_words = ["engineer", "developer", "architect", "engineering"]
+# ...and none of these.
+exclude_patterns = [
+  "junior", "intern", "frontend", "front-end", "ios", "android", "mobile",
+  "data scientist", "sales engineer", "support", "qa",
+]
+
+[region]
+# Tier 1: worldwide, or any of these words anywhere in the restriction
+# text (matched as a substring, so "EMEA time zones" and "EMEA, LATAM,
+# or North America" both match "emea").
+tier1_keywords = ["worldwide", "global", "anywhere", "emea", "mena", "middle east"]
+# Tier 1 countries: a region that includes Lebanon, or is otherwise in
+# or near the GMT+3 window.
+tier1_countries = [
+  "Lebanon", "United Arab Emirates", "Saudi Arabia", "Qatar", "Kuwait",
+  "Bahrain", "Oman", "Jordan", "Egypt", "Turkey", "Cyprus", "Greece",
+  "Iraq", "Syria", "Israel", "Kenya", "Ethiopia", "South Africa",
+]
+# Tier 2: every restriction element is one of these (after stripping the
+# word "only"), meaning the role is US-only.
+tier2_keywords = ["united states", "usa", "us", "u.s.", "u.s.a."]
+
+[remoet]
+# Leave blank to use the real remoet.dev endpoint; set for tests only.
+base_url = ""
+# Resolves the API key at runtime. Overridden by the REMOET_API_KEY
+# environment variable when set. Never printed or logged.
+key_command = "~/work/taktekhq/taktekbot/bin/get remoet-nizar-mcp-key"
+request_delay_ms = 300
+# Stop fetching before this many of today's remoet calls are used.
+budget_stop_before = 4000
+
+[himalayas]
+base_url = ""
+request_delay_ms = 300
+# Pages per keyword query before giving up on it even if nothing known
+# has turned up yet.
+max_pages = 5
+queries = [
+  "staff engineer", "principal engineer", "software architect",
+  "engineering manager", "founding engineer", "lead engineer", "tech lead",
+]
+seniority_filter = ["Senior", "Manager", "Director", "Executive"]
+
+[judge]
+# The model command. Gets the prompt on stdin and must print exactly
+# one JSON object on stdout, nothing else.
+command = "claude -p --model haiku --tools \"\""
+max_per_run = 150
+concurrency = 4

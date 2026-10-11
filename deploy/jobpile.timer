@@ -1,0 +1,12 @@
+# Fires jobpile.service once a night. See jobpile.service for install
+# steps.
+
+[Unit]
+Description=jobpile nightly run
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

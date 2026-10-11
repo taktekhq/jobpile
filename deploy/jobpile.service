@@ -1,0 +1,20 @@
+# systemd user service for one jobpile run. Install into
+# ~/.config/systemd/user/jobpile.service and edit the two paths below
+# for your machine, then enable jobpile.timer alongside it.
+#
+#   mkdir -p ~/.config/systemd/user
+#   cp deploy/jobpile.service deploy/jobpile.timer ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now jobpile.timer
+#
+# Check a run with: journalctl --user -u jobpile.service -n 100
+
+[Unit]
+Description=jobpile: find a remote job
+
+[Service]
+Type=oneshot
+# Path to the jobpile binary, built with: go build -o jobpile ./cmd/jobpile
+ExecStart=/home/%u/jobpile/jobpile run
+# The data folder: never inside the jobpile repo checkout.
+Environment=JOBPILE_DATA=/home/%u/jobpile-data
