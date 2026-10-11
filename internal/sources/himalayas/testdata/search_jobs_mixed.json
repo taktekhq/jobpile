@@ -1,0 +1,333 @@
+{
+  "comments": "Browse all jobs: cursor is the preferred pagination param.",
+  "updatedAt": 1791757207,
+  "offset": 0,
+  "limit": 20,
+  "totalCount": 2284,
+  "jobs": [
+    {
+      "title": "Engineering Manager",
+      "excerpt": "About CardiffCardiff lends to small businesses.  Since 2004 we've funded more than $12 billion across the country, to businesses in logistics, healthcare, construction, professional services, and plenty in between.",
+      "companyName": "Cardiff",
+      "companySlug": "cardiff",
+      "companyLogo": "",
+      "employmentType": "Full Time",
+      "minSalary": 180000,
+      "maxSalary": 234000,
+      "salaryPeriod": "annual",
+      "seniority": [
+        "Manager"
+      ],
+      "currency": "USD",
+      "locationRestrictions": [
+        "United States"
+      ],
+      "timezoneRestrictions": [
+        -10,
+        -9,
+        -8,
+        -7,
+        -6,
+        -5,
+        14
+      ],
+      "categories": [
+        "Engineering-Manager",
+        "Software-Engineering-Manager",
+        "Director-of-Engineering",
+        "Technical-Manager",
+        "Engineering-Lead",
+        "IT-Engineering-Manager",
+        "Engineering-Management",
+        "Product-Engineering-Manager",
+        "Engineering-Operations-Manager"
+      ],
+      "parentCategories": [
+        "Developer"
+      ],
+      "description": "<div>\n<h3>About <a href=\"https://himalayas.app/companies/cardiff\">Cardiff</a>\n</h3>\n<p><a href=\"https://himalayas.app/companies/cardiff\">Cardiff</a> lends to small businesses. Since 2004 we've funded more than $12 billion across the country, to businesses in logistics, healthcare, construction, professional services, and plenty in between. We're building our own underwriting technology, and we sti",
+      "pubDate": 1791750104,
+      "expiryDate": 1796934104,
+      "applicationLink": "https://himalayas.app/companies/cardiff/jobs/engineering-manager",
+      "guid": "https://himalayas.app/companies/cardiff/jobs/engineering-manager"
+    },
+    {
+      "title": "Strategic Channel Manager | India | Remote | Expressions Of Interest",
+      "excerpt": "Grafana Labs is the company behind Grafana Cloud, the fully managed observability platform trusted by more than 10,000 organizations to ensure reliability, resolve incidents faster, and optimize telemetry at scale.",
+      "companyName": "Grafana Labs",
+      "companySlug": "grafana-labs",
+      "companyLogo": "",
+      "employmentType": "Full Time",
+      "minSalary": null,
+      "maxSalary": null,
+      "salaryPeriod": "annual",
+      "seniority": [
+        "Manager"
+      ],
+      "currency": null,
+      "locationRestrictions": [
+        "India"
+      ],
+      "timezoneRestrictions": [
+        5.5
+      ],
+      "categories": [
+        "Channel-Manager",
+        "Sales-Manager",
+        "Partner-Manager",
+        "Business-Development-Manager",
+        "Channel-Sales",
+        "Strategic-Channel-Manager",
+        "Channel-Strategy-Manager",
+        "Channel-Partnerships-Manager",
+        "Channel-Sales-Partnerships-Manager"
+      ],
+      "parentCategories": [
+        "Sales"
+      ],
+      "description": "<div class=\"content-intro\">\n<p><a href=\"https://himalayas.app/companies/grafana-labs\">Grafana Labs</a> is the company behind Grafana Cloud, the fully managed observability platform trusted by more than 10,000 organizations to ensure reliability, resolve incidents faster, and optimize telemetry at scale. Built on open source and open standards and designed for interoperability across any stack, Gra",
+      "pubDate": 1791750072,
+      "expiryDate": 1796934071,
+      "applicationLink": "https://himalayas.app/companies/grafana-labs/jobs/strategic-channel-manager-india-remote-expressions-of-interest",
+      "guid": "https://himalayas.app/companies/grafana-labs/jobs/strategic-channel-manager-india-remote-expressions-of-interest"
+    },
+    {
+      "title": "Senior Mobile Developer | Remote - Contract",
+      "excerpt": "Role Title: Senior Mobile Software Engineer Role Type: Contractor (~15 hrs a week) Location: Remote In this role, you'll apply your expertise to help train next-generation AI systems.",
+      "companyName": "Xperteez Technology",
+      "companySlug": "xperteez-technology",
+      "companyLogo": "",
+      "employmentType": "Contractor",
+      "minSalary": 50,
+      "maxSalary": 100,
+      "salaryPeriod": "hourly",
+      "seniority": [
+        "Senior"
+      ],
+      "currency": "USD",
+      "locationRestrictions": [],
+      "timezoneRestrictions": [
+        -11,
+        -10,
+        -9.5,
+        -9,
+        -8,
+        -7,
+        -6,
+        -5,
+        -4,
+        -3.5,
+        -3,
+        -2,
+        -1,
+        0,
+        1,
+        2,
+        3,
+        3.5,
+        4,
+        4.5,
+        5,
+        5.5,
+        5.75,
+        6,
+        6.5,
+        7,
+        8,
+        8.75,
+        9,
+        9.5,
+        10,
+        10.5,
+        11,
+        12,
+        12.75,
+        13,
+        14
+      ],
+      "categories": [
+        "Senior-Mobile-Developer",
+        "Mobile-Software-Engineer",
+        "iOS-Developer",
+        "Android-Developer",
+        "Cross-Platform-Developer",
+        "Senior-Mobile-App-Developer",
+        "Senior-Mobile-Development",
+        "Senior-Mobile-Application-Developer-(IOS-Android)"
+      ],
+      "parentCategories": [
+        "Developer"
+      ],
+      "description": "<p><strong>Role Title:</strong> Senior Mobile Software Engineer</p><p><strong>Role Type:</strong> Contractor (~15 hrs a week)</p><p><strong>Location:</strong> Remote</p><p>In this role, you'll apply your expertise to help train next-generation AI systems. Your work will shape how models learn, reason, and perform through high-quality, real-world input.</p><p>As an expert, you will create Reinforce",
+      "pubDate": 1791715236,
+      "expiryDate": 1796899235,
+      "applicationLink": "https://himalayas.app/companies/xperteez-technology/jobs/senior-mobile-developer-remote-contract",
+      "guid": "https://himalayas.app/companies/xperteez-technology/jobs/senior-mobile-developer-remote-contract"
+    },
+    {
+      "title": "Staff Engineer",
+      "excerpt": "Tabby creates financial freedom in the way people shop, earn and save by reshaping their relationship with money.",
+      "companyName": "Tabby",
+      "companySlug": "tabby",
+      "companyLogo": "",
+      "employmentType": "Contractor",
+      "minSalary": null,
+      "maxSalary": null,
+      "salaryPeriod": "annual",
+      "seniority": [
+        "Senior"
+      ],
+      "currency": "USD",
+      "locationRestrictions": [],
+      "timezoneRestrictions": [
+        -11,
+        -10,
+        -9.5,
+        -9,
+        -8,
+        -7,
+        -6,
+        -5,
+        -4,
+        -3.5,
+        -3,
+        -2,
+        -1,
+        0,
+        1,
+        2,
+        3,
+        3.5,
+        4,
+        4.5,
+        5,
+        5.5,
+        5.75,
+        6,
+        6.5,
+        7,
+        8,
+        8.75,
+        9,
+        9.5,
+        10,
+        10.5,
+        11,
+        12,
+        12.75,
+        13,
+        14
+      ],
+      "categories": [
+        "Staff-Engineer",
+        "Backend-Engineer",
+        "Software-Engineer",
+        "Principal-Engineer",
+        "Staff-Engineering",
+        "Staff-Engineer-Jobs",
+        "Staff-Engineering-Jobs",
+        "Senior-Staff-Engineer"
+      ],
+      "parentCategories": [
+        "Developer"
+      ],
+      "description": "<div>\n<a href=\"https://himalayas.app/companies/tabby\">Tabby</a> creates financial freedom in the way people shop, earn and save by reshaping their relationship with money. Over 25 million users choose <a href=\"https://himalayas.app/companies/tabby\">Tabby</a> to stay in control of their spending and make the most out of their money.<br><br>The company\u2019s flagship offering allows shoppers to split th",
+      "pubDate": 1791693477,
+      "expiryDate": 1796877476,
+      "applicationLink": "https://himalayas.app/companies/tabby/jobs/staff-engineer",
+      "guid": "https://himalayas.app/companies/tabby/jobs/staff-engineer"
+    },
+    {
+      "title": "Principal Software Engineer",
+      "excerpt": "DomainTools is seeking a Principal Software Engineer to join our Infrastructure team.",
+      "companyName": "DomainTools",
+      "companySlug": "domaintools",
+      "companyLogo": "",
+      "employmentType": "Full Time",
+      "minSalary": 180000,
+      "maxSalary": 230000,
+      "salaryPeriod": "annual",
+      "seniority": [
+        "Senior"
+      ],
+      "currency": "USD",
+      "locationRestrictions": [
+        "United States"
+      ],
+      "timezoneRestrictions": [
+        -10,
+        -9,
+        -8,
+        -7,
+        -6,
+        -5,
+        14
+      ],
+      "categories": [
+        "Software-Engineer",
+        "Principal-Engineer",
+        "Infrastructure-Engineer",
+        "Systems-Engineer",
+        "Backend-Engineer",
+        "Principal-Software-Engineer",
+        "Principal-Software-Development-Engineer",
+        "Principal-Software-Engineering",
+        "Principal-Software-Developer"
+      ],
+      "parentCategories": [
+        "Developer",
+        "Operations"
+      ],
+      "description": "<p><a href=\"https://himalayas.app/companies/domaintools\">DomainTools</a> is seeking a <strong>Principal Software Engineer</strong> to join our Infrastructure team.</p><p>Our team\u2019s mission is to accelerate cross-organizational collaboration as we confront the challenges of collecting, ingesting, processing, searching, alerting and contextualizing internet-scale data for use in threat defense and i",
+      "pubDate": 1791759907,
+      "expiryDate": 1796943906,
+      "applicationLink": "https://himalayas.app/companies/domaintools/jobs/principal-software-engineer",
+      "guid": "https://himalayas.app/companies/domaintools/jobs/principal-software-engineer"
+    },
+    {
+      "title": "Principal Machine Learning Engineer",
+      "excerpt": "For A Better You At iHerb, we believe that living a healthy and balanced life should be easy and accessible to everyone.",
+      "companyName": "iHerb",
+      "companySlug": "iherb-com",
+      "companyLogo": "",
+      "employmentType": "Full Time",
+      "minSalary": 205000,
+      "maxSalary": 230000,
+      "salaryPeriod": "annual",
+      "seniority": [
+        "Senior"
+      ],
+      "currency": "USD",
+      "locationRestrictions": [
+        "Canada"
+      ],
+      "timezoneRestrictions": [
+        -8,
+        -7,
+        -6,
+        -5,
+        -4,
+        -3.5
+      ],
+      "categories": [
+        "Machine-Learning-Engineer",
+        "Principal-Machine-Learning-Engineer",
+        "Senior-ML-Engineer",
+        "ML-Infrastructure-Engineer",
+        "Applied-Machine-Learning",
+        "Principal-ML-Engineer",
+        "Principal-AI-ML-Engineer",
+        "Principal-Machine-Learning-Architect",
+        "Principal-ML-Platform-Engineer"
+      ],
+      "parentCategories": [
+        "Data Science"
+      ],
+      "description": "<p><b>For A Better You<br><br></b>At <a href=\"https://himalayas.app/companies/iherb-com\">iHerb</a>, we believe that living a healthy and balanced life should be easy and accessible to everyone. As a team member, we\u2019ll empower you to live this promise each day as you make a truly global impact in your career. <br><br>We constantly strive for innovation, while transforming and improving the online s",
+      "pubDate": 1791757759,
+      "expiryDate": 1796941758,
+      "applicationLink": "https://himalayas.app/companies/iherb-com/jobs/principal-machine-learning-engineer",
+      "guid": "https://himalayas.app/companies/iherb-com/jobs/principal-machine-learning-engineer"
+    }
+  ]
+}

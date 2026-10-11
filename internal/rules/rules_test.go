@@ -106,6 +106,8 @@ func TestConvertToYearlyUSD(t *testing.T) {
 		{"usd hourly", 50, "USD", "hour", 104000},
 		{"eur yearly", 92000, "EUR", "year", 100000},
 		{"default period is yearly", 80000, "USD", "", 80000},
+		{"usd weekly", 2000, "USD", "week", 104000},
+		{"usd fortnightly", 4000, "USD", "fortnight", 104000},
 	}
 	for _, c := range cases {
 		got, err := ConvertToYearlyUSD(c.amount, c.currency, c.period, rates)
@@ -123,7 +125,7 @@ func TestConvertToYearlyUSDErrors(t *testing.T) {
 	if _, err := ConvertToYearlyUSD(100, "XYZ", "year", rates); err == nil {
 		t.Error("unknown currency: want error, got nil")
 	}
-	if _, err := ConvertToYearlyUSD(100, "USD", "fortnight", rates); err == nil {
+	if _, err := ConvertToYearlyUSD(100, "USD", "decade", rates); err == nil {
 		t.Error("unknown period: want error, got nil")
 	}
 }

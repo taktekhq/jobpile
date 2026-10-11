@@ -138,6 +138,10 @@ func ConvertToYearlyUSD(amount float64, currency string, period string, rates ma
 		return usd, nil
 	case "month", "monthly":
 		return usd * 12, nil
+	case "week", "weekly":
+		return usd * 52, nil
+	case "fortnight", "fortnightly":
+		return usd * 26, nil
 	case "hour", "hourly":
 		return usd * 2080, nil
 	default:
