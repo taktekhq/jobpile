@@ -288,3 +288,92 @@ func TestSummarize(t *testing.T) {
 		t.Errorf("JudgeApply = %d, want 1", c.JudgeApply)
 	}
 }
+
+func TestUpsertFetchedPendingThenEnriched(t *testing.T) {
+	s := openTestStore(t)
+	now := time.Now()
+
+	pending := &model.Job{
+		ID: "remoet-99", Source: "remoet", SourceID: "99",
+		Company: "NewCo", Title: "Head of Support",
+		RuleVerdict: "pending", RuleReason: "remoet has not enriched this role yet",
+	}
+	if _, err := s.UpsertFetched(pending, now); err != nil {
+		t.Fatalf("insert pending: %v", err)
+	}
+
+	got, err := s.GetByID(pending.ID)
+	if err != nil {
+		t.Fatalf("GetByID: %v", err)
+	}
+	if got.RuleVerdict != "pending" {
+		t.Errorf("RuleVerdict = %q, want pending", got.RuleVerdict)
+	}
+
+	unmatched, err := s.AllUnmatched()
+	if err != nil {
+		t.Fatalf("AllUnmatched: %v", err)
+	}
+	if len(unmatched) != 0 {
+		t.Errorf("AllUnmatched should skip pending jobs, got %d", len(unmatched))
+	}
+	pendingList, err := s.Pending()
+	if err != nil {
+		t.Fatalf("Pending: %v", err)
+	}
+	if len(pendingList) != 1 {
+		t.Errorf("Pending() = %d jobs, want 1", len(pendingList))
+	}
+
+	// Next fetch: remoet enriched it. Re-upsert without RuleVerdict set
+	// (a fresh, enriched conversion), still missing on-disk text_hash so
+	// textChanged doesn't matter here.
+	enriched := &model.Job{
+		ID: "remoet-99", Source: "remoet", SourceID: "99",
+		Company: "NewCo", Title: "Head of Support", RemotePolicy: "remote",
+	}
+	if _, err := s.UpsertFetched(enriched, now.Add(time.Hour)); err != nil {
+		t.Fatalf("re-upsert enriched: %v", err)
+	}
+
+	got2, err := s.GetByID(pending.ID)
+	if err != nil {
+		t.Fatalf("GetByID after enrichment: %v", err)
+	}
+	if got2.RuleVerdict != "" {
+		t.Errorf("RuleVerdict after enrichment = %q, want empty so match runs", got2.RuleVerdict)
+	}
+
+	unmatched2, err := s.AllUnmatched()
+	if err != nil {
+		t.Fatalf("AllUnmatched after enrichment: %v", err)
+	}
+	if len(unmatched2) != 1 {
+		t.Errorf("AllUnmatched after enrichment = %d, want 1", len(unmatched2))
+	}
+}
+
+func TestUpsertFetchedPreservesMatchedVerdict(t *testing.T) {
+	s := openTestStore(t)
+	now := time.Now()
+	job := sampleJob()
+	if _, err := s.UpsertFetched(job, now); err != nil {
+		t.Fatalf("insert: %v", err)
+	}
+	if err := s.SaveMatchResult(job.ID, "pass", "ok", 1); err != nil {
+		t.Fatalf("SaveMatchResult: %v", err)
+	}
+
+	// A later fetch of the same, still-enriched job must not wipe the
+	// verdict match already set.
+	if _, err := s.UpsertFetched(job, now.Add(time.Hour)); err != nil {
+		t.Fatalf("re-upsert: %v", err)
+	}
+	got, err := s.GetByID(job.ID)
+	if err != nil {
+		t.Fatalf("GetByID: %v", err)
+	}
+	if got.RuleVerdict != "pass" {
+		t.Errorf("RuleVerdict = %q, want pass to survive a routine re-fetch", got.RuleVerdict)
+	}
+}

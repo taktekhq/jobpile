@@ -165,12 +165,12 @@ type UpsertResult struct {
 func (s *Store) UpsertFetched(job *model.Job, now time.Time) (UpsertResult, error) {
 	dedupKey := DedupKey(job.Company, job.Title)
 
-	var existingID, existingTextHash string
-	err := s.db.QueryRow(`SELECT id, text_hash FROM jobs WHERE id = ?`, job.ID).Scan(&existingID, &existingTextHash)
+	var existingID, existingTextHash, existingRuleVerdict string
+	err := s.db.QueryRow(`SELECT id, text_hash, rule_verdict FROM jobs WHERE id = ?`, job.ID).Scan(&existingID, &existingTextHash, &existingRuleVerdict)
 	switch {
 	case err == nil:
 		textChanged := existingTextHash != job.TextHash
-		if err := s.updateExisting(job, existingID, now, textChanged); err != nil {
+		if err := s.updateExisting(job, existingID, existingRuleVerdict, now, textChanged); err != nil {
 			return UpsertResult{}, err
 		}
 		return UpsertResult{IsNew: false, TextChanged: textChanged, CanonicalID: existingID}, nil
@@ -191,17 +191,21 @@ func (s *Store) UpsertFetched(job *model.Job, now time.Time) (UpsertResult, erro
 		return UpsertResult{}, fmt.Errorf("looking up dedup key %s: %w", dedupKey, err)
 	}
 
-	// Brand new job.
+	// Brand new job. job.RuleVerdict is "pending" when the source has
+	// not enriched it yet (every optional field null), or "" for a
+	// normal job waiting for match to run.
 	_, err = s.db.Exec(`
 		INSERT INTO jobs (
 			id, source, source_id, company, title, url, apply_url, location_text,
 			remote_policy, allowed_regions, salary_min_usd, salary_max_usd, salary_raw,
-			seniority, stack, first_seen, last_seen, missed_runs, text_hash, dedup_key
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+			seniority, stack, first_seen, last_seen, missed_runs, text_hash, dedup_key,
+			rule_verdict, rule_reason
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
 	`,
 		job.ID, job.Source, job.SourceID, job.Company, job.Title, job.URL, job.ApplyURL, job.LocationText,
 		job.RemotePolicy, toJSONList(job.AllowedRegions), job.SalaryMinUSD, job.SalaryMaxUSD, job.SalaryRaw,
 		job.Seniority, toJSONList(job.Stack), timeStr(now), timeStr(now), job.TextHash, dedupKey,
+		job.RuleVerdict, job.RuleReason,
 	)
 	if err != nil {
 		return UpsertResult{}, fmt.Errorf("inserting job %s: %w", job.ID, err)
@@ -209,25 +213,47 @@ func (s *Store) UpsertFetched(job *model.Job, now time.Time) (UpsertResult, erro
 	return UpsertResult{IsNew: true, TextChanged: true, CanonicalID: job.ID}, nil
 }
 
-func (s *Store) updateExisting(job *model.Job, id string, now time.Time, textChanged bool) error {
+func (s *Store) updateExisting(job *model.Job, id, existingRuleVerdict string, now time.Time, textChanged bool) error {
 	judgeReset := ""
 	if textChanged {
 		// The listing changed since we last judged it, so clear the old
 		// verdict and let judge pick it up again.
 		judgeReset = ", judge_verdict = '', judge_reason = '', judged_at = NULL"
 	}
+
+	// job.RuleVerdict from the freshly fetched job is only ever "" or
+	// "pending" (match has not run on this fetch pass). Stay "pending"
+	// while the source still has not enriched the role. The moment it
+	// is enriched, drop back to "" so match picks it up fresh. Once
+	// match has set "pass" or "skip", a later fetch must not stomp on
+	// that, so leave rule_verdict and rule_reason alone in that case.
+	ruleClause := ""
+	var ruleArgs []interface{}
+	switch {
+	case job.RuleVerdict == "pending":
+		ruleClause = ", rule_verdict = ?, rule_reason = ?"
+		ruleArgs = []interface{}{job.RuleVerdict, job.RuleReason}
+	case existingRuleVerdict == "pending":
+		ruleClause = ", rule_verdict = '', rule_reason = ''"
+	}
+
+	args := []interface{}{
+		job.Company, job.Title, job.URL, job.ApplyURL, job.LocationText,
+		job.RemotePolicy, toJSONList(job.AllowedRegions), job.SalaryMinUSD, job.SalaryMaxUSD,
+		job.SalaryRaw, job.Seniority, toJSONList(job.Stack), timeStr(now),
+		job.TextHash, DedupKey(job.Company, job.Title),
+	}
+	args = append(args, ruleArgs...)
+	args = append(args, id)
+
 	_, err := s.db.Exec(`
 		UPDATE jobs SET
 			company = ?, title = ?, url = ?, apply_url = ?, location_text = ?,
 			remote_policy = ?, allowed_regions = ?, salary_min_usd = ?, salary_max_usd = ?,
 			salary_raw = ?, seniority = ?, stack = ?, last_seen = ?, missed_runs = 0,
-			closed_at = NULL, text_hash = ?, dedup_key = ?`+judgeReset+`
+			closed_at = NULL, text_hash = ?, dedup_key = ?`+judgeReset+ruleClause+`
 		WHERE id = ?`,
-		job.Company, job.Title, job.URL, job.ApplyURL, job.LocationText,
-		job.RemotePolicy, toJSONList(job.AllowedRegions), job.SalaryMinUSD, job.SalaryMaxUSD,
-		job.SalaryRaw, job.Seniority, toJSONList(job.Stack), timeStr(now),
-		job.TextHash, DedupKey(job.Company, job.Title),
-		id,
+		args...,
 	)
 	if err != nil {
 		return fmt.Errorf("updating job %s: %w", id, err)
@@ -396,8 +422,17 @@ func (s *Store) PassedUnjudged(limit int) ([]model.Job, error) {
 }
 
 // AllUnmatched returns open jobs that have not been through match yet.
+// It deliberately excludes "pending" jobs: remoet roles so new that
+// every enriched field was still null when fetched. match leaves those
+// alone; the next fetch flips a job back to "" the moment remoet
+// enriches it, and only then does match pick it up.
 func (s *Store) AllUnmatched() ([]model.Job, error) {
 	return s.queryJobs(`SELECT ` + jobColumns + ` FROM jobs WHERE closed_at IS NULL AND rule_verdict = ''`)
+}
+
+// Pending returns open jobs still waiting on remoet to enrich them.
+func (s *Store) Pending() ([]model.Job, error) {
+	return s.queryJobs(`SELECT ` + jobColumns + ` FROM jobs WHERE closed_at IS NULL AND rule_verdict = 'pending'`)
 }
 
 // ByJudgeVerdict returns open jobs with the given judge verdict.

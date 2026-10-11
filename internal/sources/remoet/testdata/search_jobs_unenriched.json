@@ -1,0 +1,12 @@
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"jobs\": [{\"id\": \"6acbb64182fec1550829067d\", \"title\": \"Head of Support\", \"company\": \"Ghost\", \"companySlug\": \"ghost\", \"url\": \"https://remoet.dev/listings/ghost/jobs/head-of-support\", \"applyUrl\": \"https://careers.ghost.org/head-of-support/en\", \"companyUrl\": \"https://ghost.org\", \"location\": null, \"remotePolicy\": null, \"remoteRestrictions\": null, \"experienceLevel\": null, \"salary\": null, \"techStack\": [], \"summary\": null, \"firstSeenAt\": \"2026-10-11T16:16:01.753Z\", \"lastVerifiedAt\": null, \"duplicateCount\": 1}, {\"id\": \"6acb97cb82fec155082905c3\", \"title\": \"Senior Partner Manager\", \"company\": \"Automattic\", \"companySlug\": \"automattic\", \"url\": \"https://remoet.dev/listings/automattic/jobs/senior-partner-manager\", \"applyUrl\": \"https://automattic.com/work-with-us/job/senior-partner-manager-enterprise\", \"companyUrl\": \"https://automattic.com\", \"location\": null, \"remotePolicy\": null, \"remoteRestrictions\": null, \"experienceLevel\": null, \"salary\": null, \"techStack\": [], \"summary\": null, \"firstSeenAt\": \"2026-10-11T14:06:03.565Z\", \"lastVerifiedAt\": null, \"duplicateCount\": 1}, {\"id\": \"6acb97cb82fec155082905c0\", \"title\": \"Partner Manager\", \"company\": \"Automattic\", \"companySlug\": \"automattic\", \"url\": \"https://remoet.dev/listings/automattic/jobs/partner-manager\", \"applyUrl\": \"https://automattic.com/work-with-us/job/partner-manager-automattic-for-agencies\", \"companyUrl\": \"https://automattic.com\", \"location\": null, \"remotePolicy\": null, \"remoteRestrictions\": null, \"experienceLevel\": null, \"salary\": null, \"techStack\": [], \"summary\": null, \"firstSeenAt\": \"2026-10-11T14:06:03.431Z\", \"lastVerifiedAt\": null, \"duplicateCount\": 1}], \"totalCount\": 15815, \"page\": 1, \"pageSize\": 5, \"totalPages\": 3163, \"hasNextPage\": true}"
+      }
+    ]
+  }
+}
