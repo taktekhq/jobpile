@@ -36,6 +36,13 @@ type Job struct {
 	SalaryMaxUSD *float64
 	SalaryRaw    string
 
+	// ListingText is the job text the source gave jobpile directly,
+	// with no extra fetch: remoet's summary, or Himalayas' full
+	// description with HTML stripped. The judge uses it as-is for a
+	// Himalayas job, and as a fallback for a remoet job whose apply_url
+	// fetch failed.
+	ListingText string
+
 	Seniority string
 	Stack     []string
 

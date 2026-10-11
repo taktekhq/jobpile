@@ -326,6 +326,7 @@ func ToModel(r RawJob, rates map[string]float64) model.Job {
 		RemotePolicy: deref(r.RemotePolicy),
 		Seniority:    deref(r.ExperienceLevel),
 		Stack:        r.TechStack,
+		ListingText:  r.SummaryText(),
 	}
 
 	if restr := deref(r.RemoteRestrictions); restr != "" {

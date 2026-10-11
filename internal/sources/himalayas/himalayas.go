@@ -201,6 +201,7 @@ func ToModel(r RawJob, rates map[string]float64) model.Job {
 		RemotePolicy: "remote",
 		Seniority:    strings.Join(r.Seniority, ", "),
 		Stack:        r.Categories,
+		ListingText:  r.DescriptionText(),
 	}
 
 	switch {

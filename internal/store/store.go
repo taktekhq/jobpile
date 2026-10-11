@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 	salary_min_usd REAL,
 	salary_max_usd REAL,
 	salary_raw     TEXT NOT NULL DEFAULT '',
+	listing_text   TEXT NOT NULL DEFAULT '',
 	seniority      TEXT NOT NULL DEFAULT '',
 	stack          TEXT NOT NULL DEFAULT '[]',
 	first_seen     TEXT NOT NULL,
@@ -197,13 +198,13 @@ func (s *Store) UpsertFetched(job *model.Job, now time.Time) (UpsertResult, erro
 	_, err = s.db.Exec(`
 		INSERT INTO jobs (
 			id, source, source_id, company, title, url, apply_url, location_text,
-			remote_policy, allowed_regions, salary_min_usd, salary_max_usd, salary_raw,
+			remote_policy, allowed_regions, salary_min_usd, salary_max_usd, salary_raw, listing_text,
 			seniority, stack, first_seen, last_seen, missed_runs, text_hash, dedup_key,
 			rule_verdict, rule_reason
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
 	`,
 		job.ID, job.Source, job.SourceID, job.Company, job.Title, job.URL, job.ApplyURL, job.LocationText,
-		job.RemotePolicy, toJSONList(job.AllowedRegions), job.SalaryMinUSD, job.SalaryMaxUSD, job.SalaryRaw,
+		job.RemotePolicy, toJSONList(job.AllowedRegions), job.SalaryMinUSD, job.SalaryMaxUSD, job.SalaryRaw, job.ListingText,
 		job.Seniority, toJSONList(job.Stack), timeStr(now), timeStr(now), job.TextHash, dedupKey,
 		job.RuleVerdict, job.RuleReason,
 	)
@@ -240,7 +241,7 @@ func (s *Store) updateExisting(job *model.Job, id, existingRuleVerdict string, n
 	args := []interface{}{
 		job.Company, job.Title, job.URL, job.ApplyURL, job.LocationText,
 		job.RemotePolicy, toJSONList(job.AllowedRegions), job.SalaryMinUSD, job.SalaryMaxUSD,
-		job.SalaryRaw, job.Seniority, toJSONList(job.Stack), timeStr(now),
+		job.SalaryRaw, job.ListingText, job.Seniority, toJSONList(job.Stack), timeStr(now),
 		job.TextHash, DedupKey(job.Company, job.Title),
 	}
 	args = append(args, ruleArgs...)
@@ -250,7 +251,7 @@ func (s *Store) updateExisting(job *model.Job, id, existingRuleVerdict string, n
 		UPDATE jobs SET
 			company = ?, title = ?, url = ?, apply_url = ?, location_text = ?,
 			remote_policy = ?, allowed_regions = ?, salary_min_usd = ?, salary_max_usd = ?,
-			salary_raw = ?, seniority = ?, stack = ?, last_seen = ?, missed_runs = 0,
+			salary_raw = ?, listing_text = ?, seniority = ?, stack = ?, last_seen = ?, missed_runs = 0,
 			closed_at = NULL, text_hash = ?, dedup_key = ?`+judgeReset+ruleClause+`
 		WHERE id = ?`,
 		args...,
@@ -341,7 +342,7 @@ func (s *Store) SaveJudgeResult(id, verdict, reason string, judgedAt time.Time) 
 
 var jobColumns = `id, source, source_id, company, title, url, apply_url, location_text,
 	alt_source, alt_url, alt_apply_url, remote_policy, allowed_regions,
-	salary_min_usd, salary_max_usd, salary_raw, seniority, stack,
+	salary_min_usd, salary_max_usd, salary_raw, listing_text, seniority, stack,
 	first_seen, last_seen, closed_at, missed_runs,
 	rule_verdict, rule_reason, tier, judge_verdict, judge_reason, judged_at, text_hash`
 
@@ -356,7 +357,7 @@ func scanJob(row interface{ Scan(...interface{}) error }) (model.Job, error) {
 	err := row.Scan(
 		&j.ID, &j.Source, &j.SourceID, &j.Company, &j.Title, &j.URL, &j.ApplyURL, &j.LocationText,
 		&j.AltSource, &j.AltURL, &j.AltApplyURL, &j.RemotePolicy, &allowedRegions,
-		&salaryMin, &salaryMax, &j.SalaryRaw, &j.Seniority, &stack,
+		&salaryMin, &salaryMax, &j.SalaryRaw, &j.ListingText, &j.Seniority, &stack,
 		&firstSeen, &lastSeen, &closedAt, &j.MissedRuns,
 		&j.RuleVerdict, &j.RuleReason, &j.Tier, &j.JudgeVerdict, &j.JudgeReason, &judgedAt, &j.TextHash,
 	)
