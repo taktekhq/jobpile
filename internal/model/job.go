@@ -8,13 +8,13 @@ import "time"
 // Job is one row of the jobs table. Field names match the column names in
 // the design doc so the mapping to SQLite stays obvious.
 type Job struct {
-	ID        string // source plus source id, e.g. "remoet-12345"
-	Source    string // "remoet" or "himalayas"
-	SourceID  string // the id as the source gave it, before the prefix
-	Company   string
-	Title     string
-	URL       string
-	ApplyURL  string
+	ID           string // source plus source id, e.g. "remoet-12345"
+	Source       string // "remoet" or "himalayas"
+	SourceID     string // the id as the source gave it, before the prefix
+	Company      string
+	Title        string
+	URL          string
+	ApplyURL     string
 	LocationText string
 
 	// RemotePolicy is one of "remote", "remote-restricted", "hybrid",

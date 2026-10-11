@@ -39,9 +39,9 @@ type TitleConfig struct {
 // RegionConfig holds the word and country lists the location-tier rule
 // matches against.
 type RegionConfig struct {
-	Tier1Keywords []string `toml:"tier1_keywords"`
+	Tier1Keywords  []string `toml:"tier1_keywords"`
 	Tier1Countries []string `toml:"tier1_countries"`
-	Tier2Keywords []string `toml:"tier2_keywords"`
+	Tier2Keywords  []string `toml:"tier2_keywords"`
 }
 
 // RemoetConfig configures the remoet.dev MCP source.
