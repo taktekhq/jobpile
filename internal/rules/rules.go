@@ -72,38 +72,43 @@ func ClassifyLocation(remotePolicy string, allowedRegions []string, w RegionWord
 
 	joined := strings.Join(allowedRegions, ", ")
 
-	if hit, ok := containsAny(joined, w.Tier1Keywords); ok {
-		return 1, true, fmt.Sprintf("location: tier 1 keyword %q", hit)
-	}
-	for _, region := range allowedRegions {
-		if hit, ok := matchesAnyElement(region, w.Tier1Countries); ok {
-			return 1, true, fmt.Sprintf("location: tier 1 country %q", hit)
-		}
+	// Sources describe restrictions in free text, not always a clean
+	// list ("EMEA, LATAM, or North America", "EMEA time zones", "US
+	// citizenship required"). A substring search over the whole text
+	// catches a region word wherever it sits, rather than requiring an
+	// exact, single-country element.
+	tier1Words := append(append([]string{}, w.Tier1Keywords...), w.Tier1Countries...)
+	if hit, ok := containsAny(joined, tier1Words); ok {
+		return 1, true, fmt.Sprintf("location: tier 1 match %q", hit)
 	}
 
-	if allElementsMatch(allowedRegions, w.Tier2Keywords) {
+	if allElementsMatchTier2(allowedRegions, w.Tier2Keywords) {
 		return 2, true, "location: tier 2, US-only"
 	}
 
 	return 0, false, fmt.Sprintf("location: %s not covered by tier 1 or tier 2", joined)
 }
 
-func matchesAnyElement(element string, list []string) (string, bool) {
-	e := strings.ToLower(strings.TrimSpace(element))
-	for _, item := range list {
-		if strings.ToLower(strings.TrimSpace(item)) == e {
-			return item, true
-		}
-	}
-	return "", false
-}
-
-func allElementsMatch(elements []string, list []string) bool {
+// allElementsMatchTier2 reports whether every region element is just a
+// way of saying "United States" ("US", "US only", "USA", "U.S."), so the
+// listing is US-only rather than open to a wider, unmatched set of
+// countries.
+func allElementsMatchTier2(elements []string, tier2Keywords []string) bool {
 	if len(elements) == 0 {
 		return false
 	}
 	for _, e := range elements {
-		if _, ok := matchesAnyElement(e, list); !ok {
+		cleaned := strings.ToLower(strings.TrimSpace(e))
+		cleaned = strings.ReplaceAll(cleaned, "only", "")
+		cleaned = strings.TrimSpace(cleaned)
+		matched := false
+		for _, kw := range tier2Keywords {
+			if cleaned == strings.ToLower(strings.TrimSpace(kw)) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
 			return false
 		}
 	}

@@ -75,6 +75,13 @@ func TestClassifyLocation(t *testing.T) {
 		{"India only", "remote-restricted", []string{"India"}, 0, false},
 		{"hybrid", "hybrid", nil, 0, false},
 		{"onsite", "onsite", nil, 0, false},
+		// Real remoet/Himalayas restriction text is free-form, not always a clean list.
+		{"free text US only", "remote-restricted", []string{"US only"}, 2, true},
+		{"free text EMEA list", "remote-restricted", []string{"EMEA, LATAM, or North America"}, 1, true},
+		{"free text EMEA time zones", "remote-restricted", []string{"EMEA time zones"}, 1, true},
+		{"single unmatched country", "remote-restricted", []string{"Poland"}, 0, false},
+		{"vague operating countries", "remote-restricted", []string{"countries where Cash App operates"}, 0, false},
+		{"clearance text not US-only", "remote-restricted", []string{"US citizenship and eligibility for a government clearance required"}, 0, false},
 	}
 	for _, c := range cases {
 		tier, pass, reason := ClassifyLocation(c.remotePolicy, c.regions, w)
