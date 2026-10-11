@@ -17,6 +17,13 @@ type Job struct {
 	ApplyURL     string
 	LocationText string
 
+	// AltSource, AltURL and AltApplyURL hold the other source's view of
+	// the same role, when the same company plus title showed up in both
+	// remoet and Himalayas. The role is kept once, with both URLs.
+	AltSource   string
+	AltURL      string
+	AltApplyURL string
+
 	// RemotePolicy is one of "remote", "remote-restricted", "hybrid",
 	// "onsite", or "" when the source did not say.
 	RemotePolicy string
@@ -32,9 +39,10 @@ type Job struct {
 	Seniority string
 	Stack     []string
 
-	FirstSeen time.Time
-	LastSeen  time.Time
-	ClosedAt  *time.Time
+	FirstSeen  time.Time
+	LastSeen   time.Time
+	ClosedAt   *time.Time
+	MissedRuns int // consecutive fetch runs where the source did not list this job
 
 	RuleVerdict string // "pass", "skip", or "" before match runs
 	RuleReason  string
