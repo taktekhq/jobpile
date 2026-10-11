@@ -41,6 +41,15 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	if c.Judge.Concurrency != 4 {
 		t.Errorf("Judge.Concurrency default = %v, want 4", c.Judge.Concurrency)
 	}
+	if len(c.Himalayas.Queries) == 0 {
+		t.Error("Himalayas.Queries default must not be empty")
+	}
+	if len(c.Himalayas.SeniorityFilter) == 0 {
+		t.Error("Himalayas.SeniorityFilter default must not be empty")
+	}
+	if c.Himalayas.MaxPages != 5 {
+		t.Errorf("Himalayas.MaxPages default = %v, want 5", c.Himalayas.MaxPages)
+	}
 }
 
 func TestLoadReadsValues(t *testing.T) {

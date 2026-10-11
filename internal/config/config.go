@@ -46,7 +46,6 @@ type RegionConfig struct {
 
 // RemoetConfig configures the remoet.dev MCP source.
 type RemoetConfig struct {
-	Enabled bool   `toml:"enabled"`
 	BaseURL string `toml:"base_url"`
 	// KeyCommand is a shell command whose stdout is the API key. Used
 	// when REMOET_API_KEY is not set in the environment.
@@ -58,11 +57,16 @@ type RemoetConfig struct {
 
 // HimalayasConfig configures the Himalayas public API source.
 type HimalayasConfig struct {
-	Enabled        bool   `toml:"enabled"`
 	BaseURL        string `toml:"base_url"`
 	RequestDelayMS int    `toml:"request_delay_ms"`
 	MaxPages       int    `toml:"max_pages"`
-	PageSize       int    `toml:"page_size"`
+	// Queries is the set of title keyword searches jobpile runs against
+	// the Himalayas search endpoint instead of crawling its full ~120k
+	// job feed. See internal/sources/himalayas's package comment.
+	Queries []string `toml:"queries"`
+	// SeniorityFilter is passed as the search endpoint's seniority
+	// parameter on every query.
+	SeniorityFilter []string `toml:"seniority_filter"`
 }
 
 // JudgeConfig configures the model the judge subcommand runs.
@@ -107,8 +111,17 @@ func (c *Config) applyDefaults() {
 	if c.Himalayas.RequestDelayMS == 0 {
 		c.Himalayas.RequestDelayMS = 300
 	}
-	if c.Himalayas.PageSize == 0 {
-		c.Himalayas.PageSize = 20
+	if c.Himalayas.MaxPages == 0 {
+		c.Himalayas.MaxPages = 5
+	}
+	if len(c.Himalayas.Queries) == 0 {
+		c.Himalayas.Queries = []string{
+			"staff engineer", "principal engineer", "software architect",
+			"engineering manager", "founding engineer", "lead engineer", "tech lead",
+		}
+	}
+	if len(c.Himalayas.SeniorityFilter) == 0 {
+		c.Himalayas.SeniorityFilter = []string{"Senior", "Manager", "Director", "Executive"}
 	}
 	if c.Judge.Command == "" {
 		c.Judge.Command = `claude -p --model haiku --tools ""`
