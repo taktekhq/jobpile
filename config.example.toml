@@ -60,7 +60,7 @@ tier2_keywords = ["united states", "usa", "us", "u.s.", "u.s.a."]
 base_url = ""
 # Resolves the API key at runtime. Overridden by the REMOET_API_KEY
 # environment variable when set. Never printed or logged.
-key_command = "~/work/taktekhq/taktekbot/bin/get remoet-nizar-mcp-key"
+key_command = "pass show remoet/api-key"  # any command that prints the key
 request_delay_ms = 300
 # Stop fetching before this many of today's remoet calls are used.
 budget_stop_before = 4000
