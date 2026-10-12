@@ -107,10 +107,11 @@ func NewShellRunner(command string, timeout time.Duration) (Runner, error) {
 			// writes the model's own error message (e.g. "Prompt is
 			// too long") to stdout, not stderr, so an error that only
 			// showed stderr hid the real cause during a live run on
-			// 12 Oct. Root cause there was running several of these
-			// at once (see kbase: claude-p-concurrency-prompt-bloat);
-			// surfacing stdout here is so the next time it is not a
-			// mystery.
+			// 12 Oct. There, the actual cause was other, unrelated
+			// headless Claude sessions running on the same machine at
+			// the same time, not this command's own concurrency
+			// setting; surfacing stdout here is so the next time it
+			// is not a mystery either way.
 			return "", fmt.Errorf("judge: model command failed: %w (stdout: %s) (stderr: %s)",
 				err, truncate(strings.TrimSpace(stdout.String()), 300), truncate(strings.TrimSpace(stderr.String()), 300))
 		}

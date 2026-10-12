@@ -80,8 +80,8 @@ command = "claude -p --model haiku --tools \"\""
 max_per_run = 150
 # If judge reports a lot of "judge failed" verdicts, or the model
 # command's own error text (check text/<id>.txt and the judge log)
-# mentions a huge, wrong prompt size, try concurrency = 1: running
-# several `claude -p` calls at once has been unreliable on at least
-# one machine, randomly ballooning the prompt past its limit. One at a
-# time was reliable every time there. See README.md.
+# mentions a huge, wrong prompt size, see the "judge failed" section
+# of README.md: on one machine this traced to other, unrelated
+# headless Claude sessions running at the same time, not jobpile's own
+# concurrency setting, though lowering it there did not hurt.
 concurrency = 4

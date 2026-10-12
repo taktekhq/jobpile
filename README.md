@@ -88,13 +88,21 @@ jobpile judge --rejudge --max 300
 
 `judge_failed` in the run's output, or a `maybe.md` reason of exactly "judge
 failed", means the model returned something that did not parse as the
-expected JSON, twice in a row. Read `text/<job id>.txt` for what the judge
-actually saw, and check the model command's own error output. On at least
-one machine, running several `claude -p` calls at once turned out to be
-unreliable: the prompt size it reported would randomly balloon past its
-limit, something elsewhere on that machine under concurrent load, not a
-problem with any one prompt. Setting `concurrency = 1` in `config.toml`
-made every call succeed. If that fixes it for you too, leave it at 1.
+expected JSON, twice in a row. A job the model command failed to even run,
+twice, logs instead and is left unjudged for a later run to retry, rather
+than being counted here. Read `text/<job id>.txt` for what the judge
+actually saw, and check the model command's own error output (jobpile now
+includes stdout in that error, not just stderr, since some wrappers put the
+real error there).
+
+On one machine this showed up as `claude -p`'s own reported prompt size
+randomly ballooning past its 200k token limit on a prompt that was really a
+few thousand tokens. `concurrency = 1` did not fully fix it there: the
+actual cause was that machine running many other, unrelated `claude -p`
+headless sessions at the same time (other bots, other tools), not jobpile's
+own concurrency setting. If you see the same thing, check what else on the
+machine is running headless Claude sessions concurrently; a quieter machine
+or time window helps more than lowering jobpile's own concurrency alone.
 
 ## What the output means
 
