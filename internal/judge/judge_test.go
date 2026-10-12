@@ -82,7 +82,7 @@ func TestParseVerdictRejectsUnknownVerdict(t *testing.T) {
 }
 
 func TestBuildPromptIncludesProfileAndJob(t *testing.T) {
-	prompt := BuildPrompt("Profile: 10 years Go.", "Staff Engineer", "Acme", "Great Go role.")
+	prompt := BuildPrompt("Profile: 10 years Go.", 1, "Staff Engineer", "Acme", "Great Go role.")
 	if !strings.Contains(prompt, "Profile: 10 years Go.") {
 		t.Error("prompt missing profile content")
 	}
@@ -101,7 +101,7 @@ func TestJudgeOneWithFakeRunnerSucceeds(t *testing.T) {
 	run := func(ctx context.Context, prompt string) (string, error) {
 		return `{"verdict": "apply", "blockers": [], "reason": "fits"}`, nil
 	}
-	v, err := JudgeOne(context.Background(), run, "profile", "Title", "Co", "text")
+	v, err := JudgeOne(context.Background(), run, "profile", 1, "Title", "Co", "text")
 	if err != nil {
 		t.Fatalf("JudgeOne: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestJudgeOneRetriesOnceOnBadJSON(t *testing.T) {
 		}
 		return `{"verdict": "maybe", "blockers": [], "reason": "second try"}`, nil
 	}
-	v, err := JudgeOne(context.Background(), run, "profile", "Title", "Co", "text")
+	v, err := JudgeOne(context.Background(), run, "profile", 1, "Title", "Co", "text")
 	if err != nil {
 		t.Fatalf("JudgeOne: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestJudgeOneFallsBackAfterTwoBadJSONResponses(t *testing.T) {
 		calls++
 		return "still garbage", nil
 	}
-	v, err := JudgeOne(context.Background(), run, "profile", "Title", "Co", "text")
+	v, err := JudgeOne(context.Background(), run, "profile", 1, "Title", "Co", "text")
 	if err != nil {
 		t.Fatalf("JudgeOne: %v", err)
 	}
@@ -153,7 +153,7 @@ func TestJudgeOneReturnsErrorWhenRunnerFailsTwice(t *testing.T) {
 	run := func(ctx context.Context, prompt string) (string, error) {
 		return "", errors.New("exec failed")
 	}
-	_, err := JudgeOne(context.Background(), run, "profile", "Title", "Co", "text")
+	_, err := JudgeOne(context.Background(), run, "profile", 1, "Title", "Co", "text")
 	if err == nil {
 		t.Error("JudgeOne with a failing runner: want error, got nil")
 	}
@@ -182,7 +182,7 @@ func TestNewShellRunnerAgainstFakeModelBadJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewShellRunner: %v", err)
 	}
-	v, err := JudgeOne(context.Background(), run, "profile", "Title", "Co", "text")
+	v, err := JudgeOne(context.Background(), run, "profile", 1, "Title", "Co", "text")
 	if err != nil {
 		t.Fatalf("JudgeOne: %v", err)
 	}
@@ -196,8 +196,56 @@ func TestNewShellRunnerAgainstFailingModel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewShellRunner: %v", err)
 	}
-	_, err = JudgeOne(context.Background(), run, "profile", "Title", "Co", "text")
+	_, err = JudgeOne(context.Background(), run, "profile", 1, "Title", "Co", "text")
 	if err == nil {
 		t.Error("JudgeOne against a failing model command: want error, got nil")
+	}
+}
+
+func TestBuildPromptTier2IncludesUSContractorNote(t *testing.T) {
+	prompt := BuildPrompt("profile", 2, "Staff Engineer", "Acme", "Must be a US W-2 employee.")
+	if !strings.Contains(prompt, "tier 2") {
+		t.Error("tier 2 prompt missing tier note")
+	}
+	if !strings.Contains(prompt, "W-2") || !strings.Contains(prompt, "contractor") {
+		t.Error("tier 2 prompt missing the US-employment-is-not-a-blocker guidance")
+	}
+}
+
+func TestBuildPromptDefaultsToApplyBias(t *testing.T) {
+	prompt := BuildPrompt("profile", 1, "Staff Engineer", "Acme", "Short listing.")
+	if !strings.Contains(prompt, "Default to \"apply\"") {
+		t.Error("prompt missing the apply-by-default instruction")
+	}
+	if !strings.Contains(prompt, "not by itself a reason") && !strings.Contains(prompt, "NOT by itself a reason") {
+		t.Error("prompt missing the thin-listing-is-not-a-blocker instruction")
+	}
+}
+
+func TestBuildPromptTier1HasNoUSContractorNote(t *testing.T) {
+	prompt := BuildPrompt("profile", 1, "Staff Engineer", "Acme", "text")
+	if strings.Contains(prompt, "W-2") {
+		t.Error("tier 1 prompt should not mention W-2/US-employment guidance")
+	}
+}
+
+// TestNewShellRunnerSurfacesStdoutOnFailure reproduces the 12 Oct live
+// run's failure mode: a model wrapper (claude-ledger in text mode)
+// prints its own error ("Prompt is too long ...") to stdout, not
+// stderr, and exits non-zero. The first version of NewShellRunner only
+// captured stderr, so every one of these failures logged as a mystery
+// "exit status 1 (stderr: )" with the real cause invisible. The error
+// message must include stdout now.
+func TestNewShellRunnerSurfacesStdoutOnFailure(t *testing.T) {
+	run, err := NewShellRunner("testdata/fake_model_stdout_error.sh", 5*time.Second)
+	if err != nil {
+		t.Fatalf("NewShellRunner: %v", err)
+	}
+	_, runErr := run(context.Background(), "prompt")
+	if runErr == nil {
+		t.Fatal("run: want error, got nil")
+	}
+	if !strings.Contains(runErr.Error(), "Prompt is too long") {
+		t.Errorf("error = %q, want it to include the model's stdout message", runErr.Error())
 	}
 }

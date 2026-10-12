@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 	judge_verdict  TEXT NOT NULL DEFAULT '',
 	judge_reason   TEXT NOT NULL DEFAULT '',
 	judged_at      TEXT,
+	text_source    TEXT NOT NULL DEFAULT '',
 	text_hash      TEXT NOT NULL DEFAULT '',
 	dedup_key      TEXT NOT NULL DEFAULT ''
 );
@@ -331,20 +332,38 @@ func (s *Store) SaveMatchResult(id, verdict, reason string, tier int) error {
 	return nil
 }
 
-// SaveJudgeResult stores the outcome of the judge for one job.
-func (s *Store) SaveJudgeResult(id, verdict, reason string, judgedAt time.Time) error {
-	_, err := s.db.Exec(`UPDATE jobs SET judge_verdict = ?, judge_reason = ?, judged_at = ? WHERE id = ?`, verdict, reason, timeStr(judgedAt), id)
+// SaveJudgeResult stores the outcome of the judge for one job,
+// including which text source the judge actually read.
+func (s *Store) SaveJudgeResult(id, verdict, reason, textSource string, judgedAt time.Time) error {
+	_, err := s.db.Exec(`UPDATE jobs SET judge_verdict = ?, judge_reason = ?, judged_at = ?, text_source = ? WHERE id = ?`, verdict, reason, timeStr(judgedAt), textSource, id)
 	if err != nil {
 		return fmt.Errorf("saving judge result for %s: %w", id, err)
 	}
 	return nil
 }
 
+// ResetAllJudged clears the judge verdict on every open, already-judged
+// job (one with apply/maybe/skip set), so a changed prompt or profile
+// can re-judge it. It returns how many jobs were reset.
+func (s *Store) ResetAllJudged() (int, error) {
+	res, err := s.db.Exec(`
+		UPDATE jobs SET judge_verdict = '', judge_reason = '', judged_at = NULL, text_source = ''
+		WHERE closed_at IS NULL AND judge_verdict IN ('apply', 'maybe', 'skip')`)
+	if err != nil {
+		return 0, fmt.Errorf("resetting judged jobs: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("counting reset jobs: %w", err)
+	}
+	return int(n), nil
+}
+
 var jobColumns = `id, source, source_id, company, title, url, apply_url, location_text,
 	alt_source, alt_url, alt_apply_url, remote_policy, allowed_regions,
 	salary_min_usd, salary_max_usd, salary_raw, listing_text, seniority, stack,
 	first_seen, last_seen, closed_at, missed_runs,
-	rule_verdict, rule_reason, tier, judge_verdict, judge_reason, judged_at, text_hash`
+	rule_verdict, rule_reason, tier, judge_verdict, judge_reason, judged_at, text_source, text_hash`
 
 func scanJob(row interface{ Scan(...interface{}) error }) (model.Job, error) {
 	var j model.Job
@@ -359,7 +378,7 @@ func scanJob(row interface{ Scan(...interface{}) error }) (model.Job, error) {
 		&j.AltSource, &j.AltURL, &j.AltApplyURL, &j.RemotePolicy, &allowedRegions,
 		&salaryMin, &salaryMax, &j.SalaryRaw, &j.ListingText, &j.Seniority, &stack,
 		&firstSeen, &lastSeen, &closedAt, &j.MissedRuns,
-		&j.RuleVerdict, &j.RuleReason, &j.Tier, &j.JudgeVerdict, &j.JudgeReason, &judgedAt, &j.TextHash,
+		&j.RuleVerdict, &j.RuleReason, &j.Tier, &j.JudgeVerdict, &j.JudgeReason, &judgedAt, &j.TextSource, &j.TextHash,
 	)
 	if err != nil {
 		return model.Job{}, err

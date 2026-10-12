@@ -78,4 +78,10 @@ seniority_filter = ["Senior", "Manager", "Director", "Executive"]
 # one JSON object on stdout, nothing else.
 command = "claude -p --model haiku --tools \"\""
 max_per_run = 150
+# If judge reports a lot of "judge failed" verdicts, or the model
+# command's own error text (check text/<id>.txt and the judge log)
+# mentions a huge, wrong prompt size, try concurrency = 1: running
+# several `claude -p` calls at once has been unreliable on at least
+# one machine, randomly ballooning the prompt past its limit. One at a
+# time was reliable every time there. See README.md.
 concurrency = 4

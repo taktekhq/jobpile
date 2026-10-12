@@ -75,6 +75,27 @@ jobpile list    # write apply.md, maybe.md, skip.md
 `judge` and `run` skip judging and say so if `profile.md` does not exist yet
 in the data folder.
 
+If you edit `profile.md` or change the judge's prompt or config and want
+jobs re-screened under the new rules, add `--rejudge`: it clears every
+already-judged verdict first, then judges those plus up to `--max` more in
+the same run, so nothing judged under the old rules sits stale.
+
+```
+jobpile judge --rejudge --max 300
+```
+
+### If judge reports a lot of "judge failed"
+
+`judge_failed` in the run's output, or a `maybe.md` reason of exactly "judge
+failed", means the model returned something that did not parse as the
+expected JSON, twice in a row. Read `text/<job id>.txt` for what the judge
+actually saw, and check the model command's own error output. On at least
+one machine, running several `claude -p` calls at once turned out to be
+unreliable: the prompt size it reported would randomly balloon past its
+limit, something elsewhere on that machine under concurrent load, not a
+problem with any one prompt. Setting `concurrency = 1` in `config.toml`
+made every call succeed. If that fixes it for you too, leave it at 1.
+
 ## What the output means
 
 - `apply.md`: jobs that passed the rules and the judge found nothing wrong
@@ -140,6 +161,24 @@ search API and stops paging a query once it reaches a job it already has.
 That means jobpile never sees Himalayas' full feed, so it does not try to
 close a Himalayas job on its own; a Himalayas job only closes if it turned
 out to be the same role as a remoet listing that itself closed.
+
+## Where the judge's text comes from
+
+Himalayas already includes the full listing, so its description is used
+as-is. remoet only gives a short summary, so for a job that passed the
+rules, `judge` tries to get the real listing text before asking the model:
+
+1. If the apply link is on Greenhouse, Lever or Ashby, their own public
+   JSON API is read directly. A plain fetch of those apply pages often
+   returns almost nothing useful, since they render the listing with
+   JavaScript.
+2. Otherwise, the apply link's HTML is fetched directly and stripped of
+   tags.
+3. If that fails or returns nothing, remoet's own summary, tech stack,
+   seniority and remote restrictions are combined into a fallback.
+
+Each job's `text/<job id>.txt` file is whatever text the judge actually
+read, so a thin-looking verdict is easy to check by hand.
 
 ## License
 

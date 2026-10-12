@@ -43,6 +43,12 @@ type Job struct {
 	// fetch failed.
 	ListingText string
 
+	// TextSource says where the judge's job text came from: "board:
+	// greenhouse", "board:lever", "board:ashby", "apply_url_html",
+	// "remoet_summary_fallback", or "himalayas_description". Set when
+	// judge runs, empty before that.
+	TextSource string
+
 	Seniority string
 	Stack     []string
 

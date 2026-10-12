@@ -103,7 +103,16 @@ func NewShellRunner(command string, timeout time.Duration) (Runner, error) {
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		if err := cmd.Run(); err != nil {
-			return "", fmt.Errorf("judge: model command failed: %w (stderr: %s)", err, truncate(stderr.String(), 500))
+			// Both streams matter here: claude-ledger's text mode
+			// writes the model's own error message (e.g. "Prompt is
+			// too long") to stdout, not stderr, so an error that only
+			// showed stderr hid the real cause during a live run on
+			// 12 Oct. Root cause there was running several of these
+			// at once (see kbase: claude-p-concurrency-prompt-bloat);
+			// surfacing stdout here is so the next time it is not a
+			// mystery.
+			return "", fmt.Errorf("judge: model command failed: %w (stdout: %s) (stderr: %s)",
+				err, truncate(strings.TrimSpace(stdout.String()), 300), truncate(strings.TrimSpace(stderr.String()), 300))
 		}
 		return strings.TrimSpace(stdout.String()), nil
 	}, nil
@@ -116,19 +125,43 @@ func truncate(s string, n int) string {
 	return s[:n] + "..."
 }
 
+// tierNote describes tier 1 vs tier 2 for the prompt, and for tier 2
+// states the standing instruction not to treat US-employment phrasing
+// as a blocker: the candidate applies to US-only roles anyway, pitching
+// himself as a contractor.
+func tierNote(tier int) string {
+	switch tier {
+	case 2:
+		return "This listing is tier 2: jobpile's rules found it US-only. The candidate applies to tier 2 listings anyway, pitching himself as a contractor through an employer-of-record or his own company. Do NOT treat \"must be authorised to work in the US\", \"W-2 only\", \"US employee\", or similar US-employment phrasing as a blocker on its own. \"Full-time\" or \"full-time employee\" is also fine; that is how an EOR or contractor arrangement usually reads. Only skip for one of the profile's real hard blockers below."
+	case 1:
+		return "This listing is tier 1: jobpile's rules found it worldwide, or covering the candidate's GMT+3 time zone."
+	default:
+		return ""
+	}
+}
+
 // BuildPrompt builds the judge's prompt: first what the listing
 // requires, then how that compares with the profile, then the answer
-// format. profileMD is the candidate's profile.md content; jobText is
-// the listing text (the fetched apply_url page, or remoet's summary as
-// a fallback).
-func BuildPrompt(profileMD, jobTitle, jobCompany, jobText string) string {
+// format. profileMD is the candidate's profile.md content, which is
+// the authority on what counts as a real blocker (its own "hard
+// blockers" / "not blockers" sections, if present, win over this
+// prompt's general guidance). jobText is the listing text, and its
+// source (apply_url page, an ATS's own API, or remoet's summary) does
+// not change how it is judged. tier is the job's rule-assigned
+// location tier (1, 2, or 0 when not applicable, e.g. Himalayas).
+func BuildPrompt(profileMD string, tier int, jobTitle, jobCompany, jobText string) string {
 	var b strings.Builder
-	b.WriteString("You are screening one remote job listing for a candidate. Work in three steps.\n\n")
-	b.WriteString("Step 1: list what the listing requires or implies, if anything, for each of: work authorisation, country of residence, security clearance, onsite days, travel, tech stack, years of experience, and pay type (salary vs equity-only vs unpaid).\n\n")
-	b.WriteString("Step 2: compare that list with the candidate's profile below. Note anything the listing requires that the profile does not meet, or that the listing leaves unclear.\n\n")
+	b.WriteString("You are screening one remote job listing for a candidate. It already passed jobpile's title and location rules, so only screen for blockers, do not re-decide fit.\n\n")
+	b.WriteString("Default to \"apply\". A short, thin, or incomplete listing, or one with no salary stated, is NOT by itself a reason for \"maybe\" or \"skip\": treat missing information as neutral, not as a blocker. Only move off \"apply\" when the text itself states something that the candidate profile below calls a real blocker.\n\n")
+	if note := tierNote(tier); note != "" {
+		b.WriteString(note)
+		b.WriteString("\n\n")
+	}
+	b.WriteString("Step 1: list anything the listing explicitly states for: security clearance, a specific country or state residency requirement, onsite days or relocation, primary tech stack, years of experience, and pay (only if a figure is actually given).\n\n")
+	b.WriteString("Step 2: compare that list against the candidate profile below. The profile's own \"hard blockers\" and \"not blockers\" sections are the authority on what counts; this prompt's guidance is a default when the profile does not say.\n\n")
 	b.WriteString("Step 3: answer with exactly one JSON object, nothing else, no markdown fences, in this shape:\n")
 	b.WriteString(`{"verdict": "apply" | "maybe" | "skip", "blockers": ["..."], "reason": "one line"}` + "\n\n")
-	b.WriteString("Use \"apply\" when nothing in the listing blocks the candidate. Use \"skip\" when something clearly does, and name it in blockers. Use \"maybe\" when the listing is unclear on a blocker, for example it never says where it hires or what it pays.\n\n")
+	b.WriteString("Use \"skip\" only when the listing clearly states one of the profile's real hard blockers, and name it in blockers. Use \"maybe\" only when the text hints at a possible blocker but is genuinely unclear about it (not simply short), for example \"remote, but must be near our London office\" with no further detail. Otherwise use \"apply\".\n\n")
 	b.WriteString("--- CANDIDATE PROFILE ---\n")
 	b.WriteString(profileMD)
 	b.WriteString("\n\n--- JOB LISTING ---\n")
@@ -182,8 +215,8 @@ func stripCodeFence(s string) string {
 // error: that is a normal, storable outcome. An error is only returned
 // when the model command itself fails to run (both attempts), since
 // that job should stay unjudged and be tried again next run.
-func JudgeOne(ctx context.Context, run Runner, profileMD, jobTitle, jobCompany, jobText string) (Verdict, error) {
-	prompt := BuildPrompt(profileMD, jobTitle, jobCompany, jobText)
+func JudgeOne(ctx context.Context, run Runner, profileMD string, tier int, jobTitle, jobCompany, jobText string) (Verdict, error) {
+	prompt := BuildPrompt(profileMD, tier, jobTitle, jobCompany, jobText)
 
 	var lastRunErr error
 	for attempt := 0; attempt < 2; attempt++ {

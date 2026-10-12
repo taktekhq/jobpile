@@ -99,7 +99,7 @@ func TestUpsertFetchedResetsJudgeOnTextChange(t *testing.T) {
 	if _, err := s.UpsertFetched(job, now); err != nil {
 		t.Fatalf("insert: %v", err)
 	}
-	if err := s.SaveJudgeResult(job.ID, "apply", "looks great", now); err != nil {
+	if err := s.SaveJudgeResult(job.ID, "apply", "looks great", "himalayas_description", now); err != nil {
 		t.Fatalf("SaveJudgeResult: %v", err)
 	}
 
@@ -248,7 +248,7 @@ func TestPassedUnjudged(t *testing.T) {
 	if err := s.SaveMatchResult(alreadyJudged.ID, "pass", "ok", 1); err != nil {
 		t.Fatalf("SaveMatchResult: %v", err)
 	}
-	if err := s.SaveJudgeResult(alreadyJudged.ID, "apply", "good fit", now); err != nil {
+	if err := s.SaveJudgeResult(alreadyJudged.ID, "apply", "good fit", "himalayas_description", now); err != nil {
 		t.Fatalf("SaveJudgeResult: %v", err)
 	}
 
@@ -268,7 +268,7 @@ func TestSummarize(t *testing.T) {
 	j1 := sampleJob()
 	s.UpsertFetched(j1, now)
 	s.SaveMatchResult(j1.ID, "pass", "ok", 1)
-	s.SaveJudgeResult(j1.ID, "apply", "good", now)
+	s.SaveJudgeResult(j1.ID, "apply", "good", "himalayas_description", now)
 
 	j2 := &model.Job{ID: "remoet-2", Source: "remoet", SourceID: "2", Company: "B", Title: "Junior"}
 	s.UpsertFetched(j2, now)

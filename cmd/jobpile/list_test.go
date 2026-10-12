@@ -133,12 +133,12 @@ func TestRunListSeparatesRuleAndJudgeSkips(t *testing.T) {
 	judgeSkip := model.Job{ID: "remoet-2", Source: "remoet", SourceID: "2", Company: "B", Title: "Staff Engineer"}
 	st.UpsertFetched(&judgeSkip, now)
 	st.SaveMatchResult(judgeSkip.ID, "pass", "ok", 1)
-	st.SaveJudgeResult(judgeSkip.ID, "skip", "requires clearance", now)
+	st.SaveJudgeResult(judgeSkip.ID, "skip", "requires clearance", "apply_url_html", now)
 
 	applyJob := model.Job{ID: "remoet-3", Source: "remoet", SourceID: "3", Company: "C", Title: "Principal Engineer"}
 	st.UpsertFetched(&applyJob, now)
 	st.SaveMatchResult(applyJob.ID, "pass", "ok", 1)
-	st.SaveJudgeResult(applyJob.ID, "apply", "great fit", now)
+	st.SaveJudgeResult(applyJob.ID, "apply", "great fit", "board:greenhouse", now)
 
 	counts, err := runList(st, dir)
 	if err != nil {
