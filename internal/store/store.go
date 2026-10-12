@@ -75,7 +75,34 @@ func Open(path string) (*Store, error) {
 		db.Close()
 		return nil, fmt.Errorf("creating schema: %w", err)
 	}
+	if err := migrate(db); err != nil {
+		db.Close()
+		return nil, err
+	}
 	return &Store{db: db}, nil
+}
+
+// migrateColumns are columns added to the jobs table after some
+// databases already existed with the original schema. CREATE TABLE IF
+// NOT EXISTS above does nothing for a table that already exists, so an
+// older jobs.db needs each of these added by hand. Safe to run every
+// time Open is called: adding a column that is already there is
+// treated as a no-op, not an error.
+var migrateColumns = []string{
+	"ALTER TABLE jobs ADD COLUMN listing_text TEXT NOT NULL DEFAULT ''",
+	"ALTER TABLE jobs ADD COLUMN text_source TEXT NOT NULL DEFAULT ''",
+}
+
+func migrate(db *sql.DB) error {
+	for _, stmt := range migrateColumns {
+		if _, err := db.Exec(stmt); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return fmt.Errorf("migrating schema (%s): %w", stmt, err)
+		}
+	}
+	return nil
 }
 
 // Close closes the underlying database.

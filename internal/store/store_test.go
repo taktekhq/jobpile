@@ -377,3 +377,92 @@ func TestUpsertFetchedPreservesMatchedVerdict(t *testing.T) {
 		t.Errorf("RuleVerdict = %q, want pass to survive a routine re-fetch", got.RuleVerdict)
 	}
 }
+
+func TestOpenMigratesAnOlderSchemaMissingNewColumns(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "jobs.db")
+
+	// Simulate a jobs.db created before listing_text and text_source
+	// existed: the old schema, no migration applied yet.
+	oldSchema := `
+CREATE TABLE jobs (
+	id             TEXT PRIMARY KEY,
+	source         TEXT NOT NULL,
+	source_id      TEXT NOT NULL,
+	company        TEXT NOT NULL,
+	title          TEXT NOT NULL,
+	url            TEXT NOT NULL DEFAULT '',
+	apply_url      TEXT NOT NULL DEFAULT '',
+	location_text  TEXT NOT NULL DEFAULT '',
+	alt_source     TEXT NOT NULL DEFAULT '',
+	alt_url        TEXT NOT NULL DEFAULT '',
+	alt_apply_url  TEXT NOT NULL DEFAULT '',
+	remote_policy  TEXT NOT NULL DEFAULT '',
+	allowed_regions TEXT NOT NULL DEFAULT '[]',
+	salary_min_usd REAL,
+	salary_max_usd REAL,
+	salary_raw     TEXT NOT NULL DEFAULT '',
+	seniority      TEXT NOT NULL DEFAULT '',
+	stack          TEXT NOT NULL DEFAULT '[]',
+	first_seen     TEXT NOT NULL,
+	last_seen      TEXT NOT NULL,
+	closed_at      TEXT,
+	missed_runs    INTEGER NOT NULL DEFAULT 0,
+	rule_verdict   TEXT NOT NULL DEFAULT '',
+	rule_reason    TEXT NOT NULL DEFAULT '',
+	tier           INTEGER NOT NULL DEFAULT 0,
+	judge_verdict  TEXT NOT NULL DEFAULT '',
+	judge_reason   TEXT NOT NULL DEFAULT '',
+	judged_at      TEXT,
+	text_hash      TEXT NOT NULL DEFAULT '',
+	dedup_key      TEXT NOT NULL DEFAULT ''
+);
+`
+	bootstrap, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatalf("bootstrap sql.Open: %v", err)
+	}
+	if _, err := bootstrap.Exec(oldSchema); err != nil {
+		t.Fatalf("creating old schema: %v", err)
+	}
+	if _, err := bootstrap.Exec(
+		`INSERT INTO jobs (id, source, source_id, company, title, first_seen, last_seen) VALUES ('x-1','x','1','Co','Title','2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')`,
+	); err != nil {
+		t.Fatalf("inserting old-schema row: %v", err)
+	}
+	bootstrap.Close()
+
+	s, err := Open(path)
+	if err != nil {
+		t.Fatalf("Open on an older schema: %v", err)
+	}
+	defer s.Close()
+
+	// The pre-existing row must survive and read back with the new
+	// columns defaulted, not error out.
+	got, err := s.GetByID("x-1")
+	if err != nil {
+		t.Fatalf("GetByID after migration: %v", err)
+	}
+	if got.Company != "Co" {
+		t.Errorf("Company = %q, want Co", got.Company)
+	}
+	if got.ListingText != "" || got.TextSource != "" {
+		t.Errorf("migrated columns should default to empty, got ListingText=%q TextSource=%q", got.ListingText, got.TextSource)
+	}
+
+	// And the new column is now genuinely writable.
+	if err := s.SaveJudgeResult("x-1", "apply", "fine", "board:greenhouse", time.Now()); err != nil {
+		t.Fatalf("SaveJudgeResult after migration: %v", err)
+	}
+	got2, _ := s.GetByID("x-1")
+	if got2.TextSource != "board:greenhouse" {
+		t.Errorf("TextSource = %q, want board:greenhouse", got2.TextSource)
+	}
+
+	// Opening a second time (migration already applied) must not error.
+	s2, err := Open(path)
+	if err != nil {
+		t.Fatalf("second Open after migration: %v", err)
+	}
+	s2.Close()
+}
