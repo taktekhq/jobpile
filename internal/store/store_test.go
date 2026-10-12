@@ -466,3 +466,50 @@ CREATE TABLE jobs (
 	}
 	s2.Close()
 }
+
+// A rule change must reach jobs matched and judged on an earlier run:
+// match re-checks every open job, and a job the rules now skip leaves the
+// judge's piles even though its judge verdict is still stored.
+func TestRematchMovesJudgedJobOutOfApply(t *testing.T) {
+	s := openTestStore(t)
+	now := time.Now()
+	job := sampleJob()
+	if _, err := s.UpsertFetched(job, now); err != nil {
+		t.Fatalf("insert: %v", err)
+	}
+	if err := s.SaveMatchResult(job.ID, "pass", "ok", 1); err != nil {
+		t.Fatalf("match: %v", err)
+	}
+	if err := s.SaveJudgeResult(job.ID, "apply", "fits", "greenhouse", now); err != nil {
+		t.Fatalf("judge: %v", err)
+	}
+
+	matchable, err := s.AllMatchable()
+	if err != nil {
+		t.Fatalf("AllMatchable: %v", err)
+	}
+	if len(matchable) != 1 {
+		t.Fatalf("AllMatchable = %d, want 1 (already matched jobs are re-checked)", len(matchable))
+	}
+
+	if err := s.SaveMatchResult(job.ID, "skip", "title excluded: \"latam\"", 0); err != nil {
+		t.Fatalf("rematch: %v", err)
+	}
+	for _, v := range []string{"apply", "maybe", "skip"} {
+		var got []model.Job
+		switch v {
+		case "apply":
+			got, err = s.ByJudgeVerdict("apply")
+		case "maybe":
+			got, err = s.Maybe()
+		case "skip":
+			got, err = s.JudgeSkipped()
+		}
+		if err != nil {
+			t.Fatalf("%s: %v", v, err)
+		}
+		if len(got) != 0 {
+			t.Errorf("judge pile %q still has the rule-skipped job", v)
+		}
+	}
+}

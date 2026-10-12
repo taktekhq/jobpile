@@ -477,6 +477,13 @@ func (s *Store) AllUnmatched() ([]model.Job, error) {
 	return s.queryJobs(`SELECT ` + jobColumns + ` FROM jobs WHERE closed_at IS NULL AND rule_verdict = ''`)
 }
 
+// AllMatchable returns every open job the rules can judge: new ones and
+// ones matched on an earlier run, so a config change reaches them all.
+// Pending jobs wait until remoet enriches them.
+func (s *Store) AllMatchable() ([]model.Job, error) {
+	return s.queryJobs(`SELECT ` + jobColumns + ` FROM jobs WHERE closed_at IS NULL AND rule_verdict != 'pending'`)
+}
+
 // Pending returns open jobs still waiting on remoet to enrich them.
 func (s *Store) Pending() ([]model.Job, error) {
 	return s.queryJobs(`SELECT ` + jobColumns + ` FROM jobs WHERE closed_at IS NULL AND rule_verdict = 'pending'`)
@@ -484,7 +491,7 @@ func (s *Store) Pending() ([]model.Job, error) {
 
 // ByJudgeVerdict returns open jobs with the given judge verdict.
 func (s *Store) ByJudgeVerdict(verdict string) ([]model.Job, error) {
-	return s.queryJobs(`SELECT `+jobColumns+` FROM jobs WHERE closed_at IS NULL AND judge_verdict = ?`, verdict)
+	return s.queryJobs(`SELECT `+jobColumns+` FROM jobs WHERE closed_at IS NULL AND rule_verdict = 'pass' AND judge_verdict = ?`, verdict)
 }
 
 // RuleSkipped returns open jobs the rules skipped.
@@ -494,13 +501,13 @@ func (s *Store) RuleSkipped() ([]model.Job, error) {
 
 // JudgeSkipped returns open jobs the judge skipped.
 func (s *Store) JudgeSkipped() ([]model.Job, error) {
-	return s.queryJobs(`SELECT ` + jobColumns + ` FROM jobs WHERE closed_at IS NULL AND judge_verdict = 'skip'`)
+	return s.queryJobs(`SELECT ` + jobColumns + ` FROM jobs WHERE closed_at IS NULL AND rule_verdict = 'pass' AND judge_verdict = 'skip'`)
 }
 
 // Maybe returns open jobs the judge marked maybe or pending (new roles
 // remoet has not enriched yet).
 func (s *Store) Maybe() ([]model.Job, error) {
-	return s.queryJobs(`SELECT ` + jobColumns + ` FROM jobs WHERE closed_at IS NULL AND judge_verdict IN ('maybe', 'pending')`)
+	return s.queryJobs(`SELECT ` + jobColumns + ` FROM jobs WHERE closed_at IS NULL AND rule_verdict = 'pass' AND judge_verdict IN ('maybe', 'pending')`)
 }
 
 // Counts summarises the jobs table for runs.log.
@@ -539,7 +546,7 @@ func (s *Store) Summarize() (Counts, error) {
 	if err := s.db.QueryRow(`SELECT COUNT(*) FROM jobs WHERE closed_at IS NULL AND judge_verdict = 'maybe'`).Scan(&c.JudgeMaybe); err != nil {
 		return c, err
 	}
-	if err := s.db.QueryRow(`SELECT COUNT(*) FROM jobs WHERE closed_at IS NULL AND judge_verdict = 'skip'`).Scan(&c.JudgeSkip); err != nil {
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM jobs WHERE closed_at IS NULL AND rule_verdict = 'pass' AND judge_verdict = 'skip'`).Scan(&c.JudgeSkip); err != nil {
 		return c, err
 	}
 	if err := s.db.QueryRow(`SELECT COUNT(*) FROM jobs WHERE closed_at IS NULL AND judge_verdict = 'pending'`).Scan(&c.JudgePending); err != nil {

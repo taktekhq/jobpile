@@ -32,7 +32,7 @@ func cmdMatch(args []string) error {
 }
 
 func runMatch(cfg *config.Config, st *store.Store) (passed, skipped int, err error) {
-	jobs, err := st.AllUnmatched()
+	jobs, err := st.AllMatchable()
 	if err != nil {
 		return 0, 0, err
 	}
