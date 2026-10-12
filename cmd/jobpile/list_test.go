@@ -178,3 +178,41 @@ func TestRunListSeparatesRuleAndJudgeSkips(t *testing.T) {
 		t.Errorf("apply.md missing applied job: %q", string(applyContent))
 	}
 }
+
+func TestWriteMaybeListNotesPendingCountWithoutListingThem(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "maybe.md")
+	maybeJobs := []model.Job{{Company: "Acme", Title: "Staff Engineer", Tier: 1}}
+	if err := writeMaybeList(path, maybeJobs, 1208); err != nil {
+		t.Fatalf("writeMaybeList: %v", err)
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("reading maybe.md: %v", err)
+	}
+	content := string(b)
+	if !strings.Contains(content, "# Maybe (1)") {
+		t.Errorf("missing maybe count heading: %q", content)
+	}
+	if !strings.Contains(content, "Acme") {
+		t.Errorf("missing the actual maybe job: %q", content)
+	}
+	if !strings.Contains(content, "1208 more roles") {
+		t.Errorf("missing pending count note: %q", content)
+	}
+	if strings.Count(content, "- ") != 1 {
+		t.Errorf("pending jobs should not be listed line by line, got: %q", content)
+	}
+}
+
+func TestWriteMaybeListEmpty(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "maybe.md")
+	if err := writeMaybeList(path, nil, 0); err != nil {
+		t.Fatalf("writeMaybeList: %v", err)
+	}
+	b, _ := os.ReadFile(path)
+	if !strings.Contains(string(b), "Nothing here.") {
+		t.Errorf("empty maybe list should say so: %q", string(b))
+	}
+}

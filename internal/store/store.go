@@ -468,6 +468,7 @@ type Counts struct {
 	JudgeMaybe   int
 	JudgeSkip    int
 	JudgePending int
+	Pending      int // rule_verdict = pending: remoet has not enriched these yet
 }
 
 // Summarize returns counts of the jobs table as it stands right now.
@@ -496,6 +497,9 @@ func (s *Store) Summarize() (Counts, error) {
 		return c, err
 	}
 	if err := s.db.QueryRow(`SELECT COUNT(*) FROM jobs WHERE closed_at IS NULL AND judge_verdict = 'pending'`).Scan(&c.JudgePending); err != nil {
+		return c, err
+	}
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM jobs WHERE closed_at IS NULL AND rule_verdict = 'pending'`).Scan(&c.Pending); err != nil {
 		return c, err
 	}
 	return c, nil

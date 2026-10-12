@@ -80,9 +80,11 @@ in the data folder.
 - `apply.md`: jobs that passed the rules and the judge found nothing wrong
   with. Read this one.
 - `maybe.md`: jobs the judge found unclear on something, for example a
-  listing that never says where it hires. Also lists roles still pending:
-  brand new remoet listings it has not enriched yet, picked up again on a
-  later run.
+  listing that never says where it hires. Ends with a one-line count of
+  roles still pending: brand new remoet listings it has not enriched yet,
+  picked up again once a later fetch sees them enriched. They are not
+  listed by title, since most will not even reach the title rule once
+  enriched.
 - `skip.md`: jobs that failed either the rules or the judge, under separate
   headings, so a wrong rule is easy to spot and fix.
 

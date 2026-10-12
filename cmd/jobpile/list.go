@@ -70,11 +70,7 @@ func runList(st *store.Store, dataDir string) ([4]int, error) {
 		return counts, err
 	}
 
-	maybeSections := map[string][]model.Job{"Maybe": maybeJobs}
-	if len(pendingJobs) > 0 {
-		maybeSections["Pending (remoet has not enriched these yet)"] = pendingJobs
-	}
-	if err := writeSectionedList(filepath.Join(dataDir, "maybe.md"), []string{"Maybe", "Pending (remoet has not enriched these yet)"}, maybeSections); err != nil {
+	if err := writeMaybeList(filepath.Join(dataDir, "maybe.md"), maybeJobs, len(pendingJobs)); err != nil {
 		return counts, err
 	}
 
@@ -87,6 +83,31 @@ func runList(st *store.Store, dataDir string) ([4]int, error) {
 	}
 
 	return counts, nil
+}
+
+// writeMaybeList writes maybe.md: the jobs the judge marked maybe,
+// plus a one-line note about how many more are still pending
+// enrichment. Those pending jobs are not listed by title: most of
+// them will not even pass the title rule once remoet fills them in
+// (early on, a majority are sales, support or ops roles), so dumping
+// all of them here would bury the handful of real maybes under
+// hundreds of irrelevant lines. They are picked up automatically once
+// a later fetch sees them enriched.
+func writeMaybeList(path string, maybeJobs []model.Job, pendingCount int) error {
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Maybe (%d)\n\n", len(maybeJobs))
+	if len(maybeJobs) == 0 {
+		b.WriteString("Nothing here.\n")
+	} else {
+		for _, line := range formatJobLines(maybeJobs) {
+			b.WriteString(line)
+			b.WriteString("\n")
+		}
+	}
+	if pendingCount > 0 {
+		fmt.Fprintf(&b, "\n%d more roles are new enough that remoet has not enriched them yet (no location, pay or seniority data). jobpile re-checks them automatically once remoet fills them in; they are not listed here by title since most will not even reach the title rule.\n", pendingCount)
+	}
+	return os.WriteFile(path, []byte(b.String()), 0o644)
 }
 
 func writeSectionedList(path string, order []string, sections map[string][]model.Job) error {
