@@ -31,7 +31,7 @@ senior_patterns = [
 engineering_words = ["engineer", "developer", "architect", "engineering"]
 # ...and none of these.
 exclude_patterns = [
-  "junior", "intern", "frontend", "front-end", "ios", "android", "mobile",
+  "junior", "intern", "frontend", "front-end", "front end", "ios", "android", "mobile",
   "data scientist", "sales engineer", "support", "qa", "gtm",
   # Region named in the title means a restricted role even when the source
   # has no restriction data ("AI Training - LATAM", "Engineer (UK)").
