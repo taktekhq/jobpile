@@ -95,7 +95,7 @@ Runs only on jobs that passed the rules and have no judge verdict for their curr
 - Text: remoet gives a summary, not the full listing, so for jobs that pass the rules jobpile fetches
   `apply_url` once (plain curl, browser user agent, one request at a time, stop the source at the first
   403 or 429). A failed fetch falls back to the summary and says so in the reason.
-- Model: `claude -p --model haiku --tools ""`, one job per call, prompt plus `profile.md` plus the job
+- Model: `claude -p --model haiku --tools "" --strict-mcp-config --disable-slash-commands`, one job per call, prompt plus `profile.md` plus the job
   text. The command is set in config.
 - Prompt order: first list what the listing requires (work authorisation, residence, clearance, onsite
   days, travel, stack, years, pay type). Then compare that list with the profile. Then answer.

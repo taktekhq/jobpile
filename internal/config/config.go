@@ -72,7 +72,7 @@ type HimalayasConfig struct {
 // JudgeConfig configures the model the judge subcommand runs.
 type JudgeConfig struct {
 	// Command is the model command, split on spaces unless quoted, e.g.
-	// `claude -p --model haiku --tools ""`.
+	// `claude -p --model haiku --tools "" --strict-mcp-config --disable-slash-commands`.
 	Command     string `toml:"command"`
 	MaxPerRun   int    `toml:"max_per_run"`
 	Concurrency int    `toml:"concurrency"`
@@ -124,7 +124,7 @@ func (c *Config) applyDefaults() {
 		c.Himalayas.SeniorityFilter = []string{"Senior", "Manager", "Director", "Executive"}
 	}
 	if c.Judge.Command == "" {
-		c.Judge.Command = `claude -p --model haiku --tools ""`
+		c.Judge.Command = `claude -p --model haiku --tools "" --strict-mcp-config --disable-slash-commands`
 	}
 	if c.Judge.MaxPerRun == 0 {
 		c.Judge.MaxPerRun = 150

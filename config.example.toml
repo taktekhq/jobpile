@@ -32,7 +32,11 @@ engineering_words = ["engineer", "developer", "architect", "engineering"]
 # ...and none of these.
 exclude_patterns = [
   "junior", "intern", "frontend", "front-end", "ios", "android", "mobile",
-  "data scientist", "sales engineer", "support", "qa",
+  "data scientist", "sales engineer", "support", "qa", "gtm",
+  # Region named in the title means a restricted role even when the source
+  # has no restriction data ("AI Training - LATAM", "Engineer (UK)").
+  "latam", "apac", "- nz", "(nz)", "- uk", "(uk)", "- india", "(india)",
+  "brazil", "canada", "- europe", "(europe)", "- eu", "(eu)",
 ]
 
 [region]
@@ -76,7 +80,7 @@ seniority_filter = ["Senior", "Manager", "Director", "Executive"]
 [judge]
 # The model command. Gets the prompt on stdin and must print exactly
 # one JSON object on stdout, nothing else.
-command = "claude -p --model haiku --tools \"\""
+command = "claude -p --model haiku --tools \"\" --strict-mcp-config --disable-slash-commands"
 max_per_run = 150
 # If judge reports a lot of "judge failed" verdicts, or the model
 # command's own error text (check text/<id>.txt and the judge log)
