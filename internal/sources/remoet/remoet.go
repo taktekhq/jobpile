@@ -334,11 +334,24 @@ func ToModel(r RawJob, rates map[string]float64) model.Job {
 	}
 
 	if r.Salary != nil {
-		job.SalaryRaw = fmt.Sprintf("%.0f-%.0f %s/%s", r.Salary.From, r.Salary.To, r.Salary.Currency, r.Salary.Period)
+		// remoet sends "to": 0 for a flat, single-figure salary (no
+		// real range), not null. Taking that literally as the top of
+		// the range made a $200k flat salary read as "$200k-$0k" and
+		// skip the floor check for being "under $80k". Found 12 Oct
+		// eyeballing skip.md: Array's Principal Software Engineer
+		// ($200k-0 USD/year) and DuckDuckGo's Senior Backend Engineer
+		// ($178.5k-0 USD/year) were both skipped this way. Treat a
+		// zero top with a positive bottom as a flat salary: top equals
+		// bottom.
+		to := r.Salary.To
+		if to == 0 && r.Salary.From > 0 {
+			to = r.Salary.From
+		}
+		job.SalaryRaw = fmt.Sprintf("%.0f-%.0f %s/%s", r.Salary.From, to, r.Salary.Currency, r.Salary.Period)
 		if minUSD, err := rules.ConvertToYearlyUSD(r.Salary.From, r.Salary.Currency, r.Salary.Period, rates); err == nil {
 			job.SalaryMinUSD = &minUSD
 		}
-		if maxUSD, err := rules.ConvertToYearlyUSD(r.Salary.To, r.Salary.Currency, r.Salary.Period, rates); err == nil {
+		if maxUSD, err := rules.ConvertToYearlyUSD(to, r.Salary.Currency, r.Salary.Period, rates); err == nil {
 			job.SalaryMaxUSD = &maxUSD
 		}
 	}

@@ -237,3 +237,20 @@ func TestToModelConvertsSalaryAndID(t *testing.T) {
 		t.Errorf("AllowedRegions = %v, want [\"US only\"]", job.AllowedRegions)
 	}
 }
+
+func TestToModelTreatsZeroSalaryToAsFlatSalary(t *testing.T) {
+	raw := RawJob{
+		ID: "flat-1", Title: "Principal Software Engineer", Company: "Array",
+		Salary: &RawSalary{From: 200000, To: 0, Currency: "USD", Period: "year"},
+	}
+	job := ToModel(raw, map[string]float64{"USD": 1})
+	if job.SalaryMaxUSD == nil {
+		t.Fatal("SalaryMaxUSD is nil, want 200000 (flat salary)")
+	}
+	if *job.SalaryMaxUSD != 200000 {
+		t.Errorf("SalaryMaxUSD = %v, want 200000", *job.SalaryMaxUSD)
+	}
+	if job.SalaryMinUSD == nil || *job.SalaryMinUSD != 200000 {
+		t.Errorf("SalaryMinUSD = %v, want 200000", job.SalaryMinUSD)
+	}
+}
