@@ -188,6 +188,97 @@ rules, `judge` tries to get the real listing text before asking the model:
 Each job's `text/<job id>.txt` file is whatever text the judge actually
 read, so a thin-looking verdict is easy to check by hand.
 
+## Watch for replies
+
+`jobpile watch` reads an IMAP mailbox for human replies to jobs you've
+already applied to, and hands each new one to a command of your
+choice: a Slack DM, an email, a line appended to a file, whatever you
+run yourself. It never applies, never sends mail, and never marks a
+message read; it only reads headers and a short preview of the body
+with `BODY.PEEK`, so it leaves the mailbox exactly as it found it.
+
+Add a `[watch]` section to `config.toml` (see `config.example.toml`
+for every field, with comments):
+
+```toml
+[watch]
+imap_host = "imap.example.com"
+imap_user = "you@example.com"
+password_command = "pass show mail/imap-app-password"
+mailbox = "INBOX"
+companies = ["Acme Inc", "acme.com"]
+ignore_subjects = ["Thank you for applying"]
+notify_command = "cat >> ~/jobpile-replies.log"
+notify_footer = ""
+lookback_days = 3
+```
+
+- `imap_host` / `imap_user` / `password_command`: how to log in.
+  `password_command`'s stdout is the password; jobpile never prints
+  or logs it. TLS on port 993 is used unless `imap_host` already names
+  a port.
+- `companies`: names or domains, matched case-insensitively as a
+  substring against a message's From address, From display name, and
+  Subject. List a company both ways if you're not sure which one its
+  mail will carry. An applicant-tracking system's own shared sending
+  domain (Greenhouse, Lever, Ashby, and the like) never itself
+  contains a company's name, so a message relayed through one of
+  those only matches once the company's own name shows up in the
+  subject or display name, which this same check already does; no
+  separate setting is needed for that.
+- `ignore_subjects`: substrings matched against the Subject,
+  case-insensitively, to drop automated confirmations rather than real
+  replies. The default list covers the common "thanks for applying" /
+  "application received" / "security code" wording; add your own if a
+  particular company's ATS phrases it differently.
+- `notify_command`: gets the full notification text on stdin for each
+  new reply, one call per message. Its own stdout and stderr are not
+  shown anywhere except a short piece of stderr on failure, in
+  jobpile's own log.
+- `notify_footer`: appended as the notification's own last line,
+  for example to say which mailbox or alias received the mail. Left
+  blank, no footer line is added.
+- `lookback_days`: how many days back `SINCE` searches (default 3).
+  `--lookback N` overrides it for one run.
+
+Run it:
+
+```
+jobpile watch --dry-run        # prints what it would notify, changes nothing
+jobpile watch                  # the real thing
+jobpile watch --timeout 2m     # give up after 2 minutes either way (the default)
+```
+
+`--dry-run` never calls `notify_command` and never writes
+`watch-seen.json`, so it's safe to run as many times as you like while
+checking a new `companies` or `ignore_subjects` list.
+
+`watch-seen.json`, in the data folder, is the set of Message-IDs
+already notified on, so a reply is never reported twice across runs.
+If `notify_command` fails for a message, that message is not recorded
+as seen, so it is retried on the next run instead of being lost.
+
+Each real run prints one summary line:
+
+```
+jobpile: watch done: fetched=12 matched=3 notified=1 skipped_seen=2 skipped_ignore=0 notify_failed=0
+```
+
+`fetched` is every message IMAP SEARCH turned up since the lookback
+window; `matched` narrows that to ones naming a configured company;
+the rest break `matched` down into what happened to each.
+
+### Running it on a schedule
+
+`watch` is meant to run every 15-60 minutes, not nightly like `run`.
+`deploy/jobpile-watch.service` and `deploy/jobpile-watch.timer` are
+systemd user units for Linux, following the same install steps as
+`deploy/jobpile.service`. `deploy/jobpile-watch.plist.example` is a
+macOS launchd template: copy it to `~/Library/LaunchAgents/`, edit the
+paths and label, then `launchctl load` it. Either way, pass
+`--timeout` so one hung mail server or notify command can't block the
+next scheduled run.
+
 ## License
 
 MIT. See `LICENSE`.

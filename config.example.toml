@@ -89,3 +89,41 @@ max_per_run = 150
 # headless Claude sessions running at the same time, not jobpile's own
 # concurrency setting, though lowering it there did not hurt.
 concurrency = 4
+
+# Entirely optional, and only read by `jobpile watch`: leave this
+# whole section out if you don't use it. watch reads an IMAP mailbox
+# for human replies from companies you applied to, without ever
+# marking a message read or sending anything itself. See the "Watch
+# for replies" section of README.md.
+[watch]
+imap_host = "imap.example.com"
+imap_user = "you@example.com"
+# Resolves the IMAP password at runtime, e.g. an app password from
+# your mail provider, read from your own password manager's CLI.
+# Never printed or logged.
+password_command = "pass show mail/imap-app-password"
+mailbox = "INBOX"
+# Names or domains, matched case-insensitively as a substring against
+# a message's From address, From display name, and Subject. An
+# applicant-tracking system's shared sending domain (Greenhouse,
+# Lever, Ashby, and similar) only matches once the company's own name
+# shows up in the subject or display name, which this same check
+# already covers on its own, no special case needed.
+companies = ["Acme Inc", "acme.com"]
+# Substrings matched case-insensitively against the Subject, to drop
+# automated confirmations that are not a real reply from a person.
+ignore_subjects = [
+  "Security code for your application",
+  "Thank you for applying",
+  "Thanks for applying",
+  "application was received",
+  "We've received your application",
+]
+# Gets the notification text for one new reply on its stdin, e.g. a
+# script that posts to Slack or chat, sends an email, or appends to a
+# file.
+notify_command = "cat >> ~/jobpile-replies.log"
+# Appended as the notification's own last line, e.g. to say which
+# mailbox received it. Leave blank for no footer line.
+notify_footer = ""
+lookback_days = 3

@@ -27,6 +27,7 @@ type Config struct {
 	Himalayas HimalayasConfig `toml:"himalayas"`
 
 	Judge JudgeConfig `toml:"judge"`
+	Watch WatchConfig `toml:"watch"`
 }
 
 // TitleConfig holds the word lists the title rule matches against.
@@ -76,6 +77,41 @@ type JudgeConfig struct {
 	Command     string `toml:"command"`
 	MaxPerRun   int    `toml:"max_per_run"`
 	Concurrency int    `toml:"concurrency"`
+}
+
+// WatchConfig configures the watch subcommand: an IMAP mailbox
+// jobpile reads (and never writes to, never marks read) looking for
+// human replies from companies applied to. The whole section is
+// optional; leave it out of config.toml entirely if you don't use
+// `jobpile watch`.
+type WatchConfig struct {
+	IMAPHost string `toml:"imap_host"`
+	IMAPUser string `toml:"imap_user"`
+	// PasswordCommand's stdout is the IMAP password. Never printed or
+	// logged.
+	PasswordCommand string `toml:"password_command"`
+	Mailbox         string `toml:"mailbox"`
+	// Companies is matched case-insensitively as a substring against
+	// a message's From address, From display name, and Subject. List
+	// a company by name, by domain, or both. An applicant-tracking
+	// system's own shared sending domain (Greenhouse, Lever, Ashby,
+	// and similar) never contains a company name, so a message from
+	// one of those only matches once the company's name itself shows
+	// up in the subject or display name, which this same check
+	// already covers without any special case for ATS domains.
+	Companies []string `toml:"companies"`
+	// IgnoreSubjects is matched case-insensitively as a substring
+	// against the Subject, to drop automated confirmations that are
+	// not a real reply from a person.
+	IgnoreSubjects []string `toml:"ignore_subjects"`
+	// NotifyCommand gets the notification text for one new reply on
+	// its stdin.
+	NotifyCommand string `toml:"notify_command"`
+	// NotifyFooter is appended as the notification's own last line,
+	// e.g. to say which mailbox or alias received it. Left blank, no
+	// footer line is added.
+	NotifyFooter string `toml:"notify_footer"`
+	LookbackDays int    `toml:"lookback_days"`
 }
 
 // Load reads and parses a config.toml file at path, then fills in any
@@ -132,11 +168,29 @@ func (c *Config) applyDefaults() {
 	if c.Judge.Concurrency == 0 {
 		c.Judge.Concurrency = 4
 	}
+	if c.Watch.Mailbox == "" {
+		c.Watch.Mailbox = "INBOX"
+	}
+	if c.Watch.LookbackDays == 0 {
+		c.Watch.LookbackDays = 3
+	}
+	if len(c.Watch.IgnoreSubjects) == 0 {
+		c.Watch.IgnoreSubjects = []string{
+			"Security code for your application",
+			"Thank you for applying",
+			"Thanks for applying",
+			"application was received",
+			"We've received your application",
+		}
+	}
 }
 
 func (c *Config) validate() error {
 	if c.Floor < 0 {
 		return fmt.Errorf("config: floor_usd must not be negative")
+	}
+	if c.Watch.LookbackDays < 0 {
+		return fmt.Errorf("config: watch.lookback_days must not be negative")
 	}
 	return nil
 }
@@ -160,4 +214,22 @@ func (r RemoetConfig) RemoetAPIKey(runKeyCommand func(string) (string, error)) (
 		return "", fmt.Errorf("remoet: key_command produced an empty key")
 	}
 	return key, nil
+}
+
+// WatchPassword resolves the IMAP password by running PasswordCommand
+// and reading its stdout. It never prints the password; the caller
+// must not print it either.
+func (w WatchConfig) WatchPassword(runPasswordCommand func(string) (string, error)) (string, error) {
+	if w.PasswordCommand == "" {
+		return "", fmt.Errorf("watch: no password_command in config")
+	}
+	out, err := runPasswordCommand(w.PasswordCommand)
+	if err != nil {
+		return "", fmt.Errorf("watch: password_command failed: %w", err)
+	}
+	password := strings.TrimSpace(out)
+	if password == "" {
+		return "", fmt.Errorf("watch: password_command produced an empty password")
+	}
+	return password, nil
 }

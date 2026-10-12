@@ -50,6 +50,97 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	if c.Himalayas.MaxPages != 5 {
 		t.Errorf("Himalayas.MaxPages default = %v, want 5", c.Himalayas.MaxPages)
 	}
+	if c.Watch.Mailbox != "INBOX" {
+		t.Errorf("Watch.Mailbox default = %q, want INBOX", c.Watch.Mailbox)
+	}
+	if c.Watch.LookbackDays != 3 {
+		t.Errorf("Watch.LookbackDays default = %v, want 3", c.Watch.LookbackDays)
+	}
+	if len(c.Watch.IgnoreSubjects) == 0 {
+		t.Error("Watch.IgnoreSubjects default must not be empty")
+	}
+}
+
+func TestLoadWatchSection(t *testing.T) {
+	path := writeTempConfig(t, `
+[watch]
+imap_host = "imap.example.com"
+imap_user = "me@example.com"
+password_command = "echo fake-password"
+mailbox = "Replies"
+companies = ["Acme", "acme.com"]
+ignore_subjects = ["custom ignore"]
+notify_command = "cat"
+notify_footer = "footer line"
+lookback_days = 7
+`)
+	c, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if c.Watch.IMAPHost != "imap.example.com" {
+		t.Errorf("Watch.IMAPHost = %q, want imap.example.com", c.Watch.IMAPHost)
+	}
+	if c.Watch.Mailbox != "Replies" {
+		t.Errorf("Watch.Mailbox = %q, want Replies", c.Watch.Mailbox)
+	}
+	if len(c.Watch.Companies) != 2 {
+		t.Errorf("Watch.Companies = %v, want 2 entries", c.Watch.Companies)
+	}
+	if len(c.Watch.IgnoreSubjects) != 1 || c.Watch.IgnoreSubjects[0] != "custom ignore" {
+		t.Errorf("Watch.IgnoreSubjects = %v, want [custom ignore] (a configured list must replace the default, not merge with it)", c.Watch.IgnoreSubjects)
+	}
+	if c.Watch.LookbackDays != 7 {
+		t.Errorf("Watch.LookbackDays = %v, want 7", c.Watch.LookbackDays)
+	}
+	if c.Watch.NotifyFooter != "footer line" {
+		t.Errorf("Watch.NotifyFooter = %q, want %q", c.Watch.NotifyFooter, "footer line")
+	}
+}
+
+func TestLoadRejectsNegativeLookbackDays(t *testing.T) {
+	path := writeTempConfig(t, "[watch]\nlookback_days = -1\n")
+	if _, err := Load(path); err == nil {
+		t.Error("Load with negative watch.lookback_days: want error, got nil")
+	}
+}
+
+func TestWatchPasswordRunsCommand(t *testing.T) {
+	w := WatchConfig{PasswordCommand: "whatever"}
+	password, err := w.WatchPassword(func(cmd string) (string, error) {
+		if cmd != "whatever" {
+			t.Errorf("command = %q, want whatever", cmd)
+		}
+		return "  secret-pw  \n", nil
+	})
+	if err != nil {
+		t.Fatalf("WatchPassword: %v", err)
+	}
+	if password != "secret-pw" {
+		t.Errorf("password = %q, want secret-pw", password)
+	}
+}
+
+func TestWatchPasswordErrorsWithNoCommand(t *testing.T) {
+	w := WatchConfig{}
+	if _, err := w.WatchPassword(func(string) (string, error) { return "x", nil }); err == nil {
+		t.Error("WatchPassword with no password_command: want error, got nil")
+	}
+}
+
+func TestWatchPasswordPropagatesCommandError(t *testing.T) {
+	w := WatchConfig{PasswordCommand: "whatever"}
+	wantErr := errors.New("boom")
+	if _, err := w.WatchPassword(func(string) (string, error) { return "", wantErr }); err == nil {
+		t.Error("WatchPassword with failing command: want error, got nil")
+	}
+}
+
+func TestWatchPasswordRejectsEmptyOutput(t *testing.T) {
+	w := WatchConfig{PasswordCommand: "whatever"}
+	if _, err := w.WatchPassword(func(string) (string, error) { return "   \n", nil }); err == nil {
+		t.Error("WatchPassword with blank command output: want error, got nil")
+	}
 }
 
 func TestLoadReadsValues(t *testing.T) {

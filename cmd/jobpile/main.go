@@ -30,6 +30,8 @@ func main() {
 		err = cmdList(os.Args[2:])
 	case "run":
 		err = cmdRun(os.Args[2:])
+	case "watch":
+		err = cmdWatch(os.Args[2:])
 	case "-h", "--help", "help":
 		usage()
 		return
@@ -54,6 +56,9 @@ Usage:
   jobpile judge  [--data DIR] [--max N]    run the model on new passing jobs
   jobpile list   [--data DIR]              write apply.md, maybe.md, skip.md
   jobpile run    [--data DIR] [--max N]    fetch, match, judge, list in order
+  jobpile watch  [--data DIR] [--dry-run] [--lookback N] [--timeout DUR]
+                                           watch an IMAP mailbox for replies
+                                           from companies applied to
 
 DIR may also be set with the JOBPILE_DATA environment variable.
 See README.md for how to set up a data folder.

@@ -25,4 +25,13 @@ func TestLoadExampleConfig(t *testing.T) {
 	if c.Judge.Command == "" {
 		t.Error("Judge.Command is empty")
 	}
+	if c.Watch.IMAPHost == "" {
+		t.Error("Watch.IMAPHost is empty")
+	}
+	if len(c.Watch.Companies) == 0 {
+		t.Error("Watch.Companies is empty")
+	}
+	if len(c.Watch.IgnoreSubjects) == 0 {
+		t.Error("Watch.IgnoreSubjects is empty")
+	}
 }

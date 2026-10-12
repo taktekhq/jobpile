@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  macOS launchd agent template for `jobpile watch`, run every 30
+  minutes. Copy this file, fill in the placeholders below, and give
+  it a real name:
+
+    cp deploy/jobpile-watch.plist.example \
+      ~/Library/LaunchAgents/com.example.jobpile-watch.plist
+    # edit every <!-- FILL IN --> value below, and the Label to match
+    # the filename you chose
+    launchctl load ~/Library/LaunchAgents/com.example.jobpile-watch.plist
+
+  Check it ran with:
+
+    launchctl list | grep jobpile-watch
+    tail -f /path/to/your/logs/jobpile-watch.log
+
+  --timeout bounds one run so a hung mail server or notify_command
+  can never block the next scheduled one; StartInterval alone does
+  not guarantee that.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.example.jobpile-watch</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<!-- FILL IN: absolute path to the jobpile binary, e.g. built
+		     with `go build -o jobpile ./cmd/jobpile` or installed with
+		     `go install`. -->
+		<string>/path/to/jobpile</string>
+		<string>watch</string>
+		<string>--timeout</string>
+		<string>2m</string>
+	</array>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>JOBPILE_DATA</key>
+		<!-- FILL IN: your data folder, never inside the jobpile repo. -->
+		<string>/path/to/jobpile-data</string>
+		<!-- FILL IN: on macOS, launchd agents often don't inherit your
+		     shell's PATH, so password_command and notify_command need
+		     one that can find the tools they call. -->
+		<key>PATH</key>
+		<string>/usr/local/bin:/usr/bin:/bin</string>
+	</dict>
+
+	<key>StartInterval</key>
+	<integer>1800</integer>
+
+	<key>StandardOutPath</key>
+	<!-- FILL IN: a real log path. -->
+	<string>/path/to/your/logs/jobpile-watch.log</string>
+	<key>StandardErrorPath</key>
+	<string>/path/to/your/logs/jobpile-watch.log</string>
+
+	<key>RunAtLoad</key>
+	<true/>
+</dict>
+</plist>

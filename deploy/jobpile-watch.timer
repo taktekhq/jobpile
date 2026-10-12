@@ -1,0 +1,12 @@
+# Fires jobpile-watch.service every 30 minutes. See
+# jobpile-watch.service for install steps.
+
+[Unit]
+Description=jobpile watch, every 30 minutes
+
+[Timer]
+OnCalendar=*:0/30
+Persistent=true
+
+[Install]
+WantedBy=timers.target

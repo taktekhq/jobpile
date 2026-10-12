@@ -1,0 +1,22 @@
+# systemd user service for one jobpile watch run. Install into
+# ~/.config/systemd/user/jobpile-watch.service and edit the two paths
+# below for your machine, then enable jobpile-watch.timer alongside
+# it. See jobpile.service for the nightly `run` job; this one is
+# separate because watch runs far more often.
+#
+#   mkdir -p ~/.config/systemd/user
+#   cp deploy/jobpile-watch.service deploy/jobpile-watch.timer ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now jobpile-watch.timer
+#
+# Check a run with: journalctl --user -u jobpile-watch.service -n 100
+
+[Unit]
+Description=jobpile: watch for replies to job applications
+
+[Service]
+Type=oneshot
+# Path to the jobpile binary, built with: go build -o jobpile ./cmd/jobpile
+ExecStart=/home/%u/jobpile/jobpile watch --timeout 2m
+# The data folder: never inside the jobpile repo checkout.
+Environment=JOBPILE_DATA=/home/%u/jobpile-data
